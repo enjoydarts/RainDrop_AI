@@ -27,6 +27,10 @@ export async function GET(request: NextRequest) {
 
   try {
     // Step 1: トークン交換
+    const redirectUri = `${process.env.NEXTAUTH_URL}/api/auth/raindrop/callback`
+    console.log("[raindrop][callback] NEXTAUTH_URL:", process.env.NEXTAUTH_URL)
+    console.log("[raindrop][callback] redirect_uri:", redirectUri)
+
     const tokenResponse = await fetch("https://raindrop.io/oauth/access_token", {
       method: "POST",
       headers: {
@@ -38,7 +42,7 @@ export async function GET(request: NextRequest) {
         code,
         client_id: process.env.AUTH_RAINDROP_ID,
         client_secret: process.env.AUTH_RAINDROP_SECRET,
-        redirect_uri: `${process.env.NEXTAUTH_URL}/api/auth/raindrop/callback`,
+        redirect_uri: redirectUri,
       }),
     })
 
