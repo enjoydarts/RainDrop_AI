@@ -49,16 +49,23 @@ cp .env.local.example .env.local
 
 ```bash
 # 初回起動（ビルド含む）
-docker compose up --build
+docker compose up --build -d
 
-# 通常起動
-docker compose up
-
-# バックグラウンド起動
-docker compose up -d
+# 依存関係のインストールを待つ
+docker compose logs -f web
 ```
 
-### 3. アクセス
+### 3. データベースマイグレーション
+
+```bash
+# マイグレーション生成（スキーマからSQLを生成）
+docker compose exec web npm run db:generate
+
+# マイグレーション適用（DBにテーブルを作成）
+docker compose exec web npm run db:push
+```
+
+### 4. アクセス
 
 - **Next.js**: http://localhost:3000
 - **Extract API**: http://localhost:8000
