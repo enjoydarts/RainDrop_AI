@@ -128,10 +128,11 @@ export async function GET(request: NextRequest) {
 
     response.cookies.set("raindrop-session", cookieValue, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: true,
       sameSite: "lax",
       maxAge: 60 * 60 * 24 * 7, // 7 days
       path: "/",
+      domain: undefined, // ドメインを明示的に指定しない
     })
 
     console.log("[raindrop][callback] Cookie set, redirecting to /dashboard")
