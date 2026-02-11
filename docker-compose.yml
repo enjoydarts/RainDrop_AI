@@ -1,4 +1,4 @@
-version: '3.8'
+version: "3.8"
 
 services:
   # Next.js アプリケーション
@@ -44,6 +44,7 @@ services:
       - "8288:8288"
     environment:
       - INNGEST_DEV=1
+    command: ["inngest", "dev"]
 
   # PostgreSQL
   db:

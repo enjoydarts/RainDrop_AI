@@ -1,0 +1,20 @@
+# Docker関連ファイル（本番環境では不要）
+docker-compose.yml
+Dockerfile
+.dockerignore
+
+# 開発用ファイル
+.env.local
+*.bak
+*.[...nextauth].bak/
+
+# テスト
+coverage/
+jest.config.js
+jest.setup.js
+
+# ドキュメント（オプション）
+docs/
+
+# Extract サービス（別途デプロイ）
+extract/

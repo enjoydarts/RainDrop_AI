@@ -67,3 +67,7 @@ env/
 # Misc
 .turbo
 .cache
+
+# Backup files
+*.bak
+*.[...nextauth].bak/
