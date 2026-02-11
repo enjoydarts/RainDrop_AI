@@ -9,8 +9,9 @@ import Link from "next/link"
 export default async function SummaryDetailPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
   const cookieStore = await cookies()
   const sessionCookie = cookieStore.get("raindrop-session")
 
@@ -31,7 +32,7 @@ export default async function SummaryDetailPage({
   const [summary] = await db
     .select()
     .from(summaries)
-    .where(and(eq(summaries.id, params.id), eq(summaries.userId, userId)))
+    .where(and(eq(summaries.id, id), eq(summaries.userId, userId)))
     .limit(1)
 
   if (!summary) {
