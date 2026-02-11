@@ -32,16 +32,70 @@ Raindrop.ioに保存した記事を自動で取り込み、AI要約で「読ん�
 
 ## セットアップ
 
-詳細なセットアップ手順は [docs/SETUP.md](docs/SETUP.md) を参照してください。
+### 1. 環境変数の設定
+
+```bash
+# .env.local.exampleをコピー
+cp .env.local.example .env.local
+
+# 必要な環境変数を設定
+# - AUTH_SECRET: openssl rand -hex 32
+# - ENCRYPTION_KEY: openssl rand -hex 32
+# - AUTH_RAINDROP_ID/SECRET: Raindrop.io App Management
+# - ANTHROPIC_API_KEY: Anthropic Console
+```
+
+### 2. Docker Composeで起動
+
+```bash
+# 初回起動（ビルド含む）
+docker compose up --build
+
+# 通常起動
+docker compose up
+
+# バックグラウンド起動
+docker compose up -d
+```
+
+### 3. アクセス
+
+- **Next.js**: http://localhost:3000
+- **Extract API**: http://localhost:8000
+- **Inngest Dev Server**: http://localhost:8288
+- **PostgreSQL**: localhost:5432
 
 ## 開発
 
-```bash
-# ローカル開発環境起動（Docker Compose）
-docker compose up --build
+### ローカル開発環境
 
-# Next.js開発サーバー
-npm run dev
+Docker Compose環境が起動している状態で開発を進めます。
+
+```bash
+# ログを確認
+docker compose logs -f web
+
+# 特定のサービスを再起動
+docker compose restart web
+
+# 停止
+docker compose down
+
+# 完全削除（DBデータも削除）
+docker compose down -v
+```
+
+### データベース
+
+```bash
+# マイグレーション生成
+docker compose exec web npm run db:generate
+
+# マイグレーション適用
+docker compose exec web npm run db:push
+
+# Drizzle Studio起動
+docker compose exec web npm run db:studio
 ```
 
 ## ライセンス

@@ -42,6 +42,9 @@ next-env.d.ts
 *~
 .DS_Store
 
+# Claude
+.claude/
+
 # Python
 __pycache__/
 *.py[cod]

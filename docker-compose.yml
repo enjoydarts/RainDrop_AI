@@ -1,0 +1,66 @@
+version: '3.8'
+
+services:
+  # Next.js アプリケーション
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile.dev
+    ports:
+      - "3000:3000"
+    volumes:
+      - .:/app
+      - /app/node_modules
+      - /app/.next
+    env_file:
+      - .env.local
+    depends_on:
+      - db
+      - extract
+      - inngest
+    environment:
+      - NODE_ENV=development
+      - WATCHPACK_POLLING=true
+
+  # Python 本文抽出サービス
+  extract:
+    build:
+      context: ./services/extract
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    environment:
+      - PORT=8000
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # Inngest Dev Server
+  inngest:
+    image: inngest/inngest:latest
+    ports:
+      - "8288:8288"
+    environment:
+      - INNGEST_DEV=1
+
+  # PostgreSQL
+  db:
+    image: postgres:15-alpine
+    ports:
+      - "5432:5432"
+    environment:
+      - POSTGRES_DB=raindrop_ai
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=postgres
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  postgres_data:
