@@ -11,12 +11,26 @@ export async function POST(request: NextRequest) {
 
     const code = params.get("code")
     const redirect_uri = params.get("redirect_uri")
-    const client_id = params.get("client_id")
-    const client_secret = params.get("client_secret")
+
+    // 環境変数から直接取得（NextAuthは渡してくれない）
+    const client_id = process.env.AUTH_RAINDROP_ID
+    const client_secret = process.env.AUTH_RAINDROP_SECRET
 
     console.log("[raindrop-proxy] Token exchange request")
     console.log("[raindrop-proxy] Code:", code?.substring(0, 8))
     console.log("[raindrop-proxy] Redirect URI:", redirect_uri)
+    console.log("[raindrop-proxy] Client ID:", client_id)
+    console.log("[raindrop-proxy] Client Secret:", client_secret?.substring(0, 8))
+
+    const requestBody = {
+      grant_type: "authorization_code",
+      code,
+      client_id,
+      client_secret,
+      redirect_uri,
+    }
+
+    console.log("[raindrop-proxy] Request body:", JSON.stringify(requestBody))
 
     // Raindrop.io形式でリクエスト
     const raindropResponse = await fetch("https://raindrop.io/oauth/access_token", {
@@ -25,13 +39,7 @@ export async function POST(request: NextRequest) {
         "Content-Type": "application/json",
         Accept: "application/json",
       },
-      body: JSON.stringify({
-        grant_type: "authorization_code",
-        code,
-        client_id,
-        client_secret,
-        redirect_uri,
-      }),
+      body: JSON.stringify(requestBody),
     })
 
     console.log("[raindrop-proxy] Raindrop response status:", raindropResponse.status)
