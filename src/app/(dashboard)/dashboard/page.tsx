@@ -85,7 +85,7 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="bg-gray-50 px-6 py-3">
-            <Link href="/dashboard/raindrops" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+            <Link href="/raindrops" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
               記事一覧を見る →
             </Link>
           </div>
@@ -109,7 +109,7 @@ export default async function DashboardPage() {
             </div>
           </div>
           <div className="bg-gray-50 px-6 py-3">
-            <Link href="/dashboard/summaries" className="text-sm font-medium text-green-600 hover:text-green-500">
+            <Link href="/summaries" className="text-sm font-medium text-green-600 hover:text-green-500">
               要約一覧を見る →
             </Link>
           </div>
@@ -153,7 +153,7 @@ export default async function DashboardPage() {
           </div>
           <div className="mt-4 sm:mt-0">
             <Link
-              href="/dashboard/raindrops"
+              href="/raindrops"
               className="inline-flex items-center rounded-md border border-transparent bg-white px-6 py-3 text-base font-medium text-indigo-600 shadow-sm hover:bg-indigo-50"
             >
               記事を同期
@@ -167,7 +167,7 @@ export default async function DashboardPage() {
         <div>
           <div className="mb-4 flex items-center justify-between">
             <h2 className="text-xl font-semibold text-gray-900">最近の要約</h2>
-            <Link href="/dashboard/summaries" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+            <Link href="/summaries" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
               すべて見る →
             </Link>
           </div>

@@ -31,7 +31,7 @@ export default async function SummariesPage() {
           <div className="px-4 py-12 text-center">
             <p className="mb-4 text-gray-500">まだ要約が生成されていません</p>
             <Link
-              href="/dashboard/raindrops"
+              href="/raindrops"
               className="font-medium text-indigo-600 hover:text-indigo-500"
             >
               記事を取り込む →

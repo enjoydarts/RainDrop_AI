@@ -20,7 +20,7 @@ export async function triggerImport() {
   })
 
   // ページをリフレッシュ
-  revalidatePath("/dashboard/raindrops")
+  revalidatePath("/raindrops")
 }
 
 export async function generateSummary(raindropId: number, tone: string = "neutral") {
@@ -50,6 +50,6 @@ export async function generateSummary(raindropId: number, tone: string = "neutra
   })
 
   // ページをリフレッシュ
-  revalidatePath("/dashboard/raindrops")
-  revalidatePath("/dashboard/summaries")
+  revalidatePath("/raindrops")
+  revalidatePath("/summaries")
 }

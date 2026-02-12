@@ -50,7 +50,7 @@ export default async function SummaryDetailPage({
     <div className="mx-auto max-w-4xl px-4 sm:px-0">
       <div className="mb-4">
         <Link
-          href="/dashboard/summaries"
+          href="/summaries"
           className="text-sm text-indigo-600 hover:text-indigo-500"
         >
           ← 要約一覧に戻る
