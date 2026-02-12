@@ -3,7 +3,7 @@ import { DrizzleAdapter } from "@auth/drizzle-adapter"
 import { db } from "@/db"
 import { users } from "@/db/schema"
 import { eq } from "drizzle-orm"
-import { encrypt } from "@/lib/crypto"
+import { authConfig } from "@/auth.config"
 import type { NextAuthConfig } from "next-auth"
 
 // Raindrop.io OAuth プロバイダー定義
@@ -22,6 +22,10 @@ const RaindropProvider = {
     async request(context: any) {
       const { params, provider } = context
 
+      console.log("[raindrop][token] Starting token exchange")
+      console.log("[raindrop][token] Code:", params.code?.substring(0, 8))
+      console.log("[raindrop][token] Redirect URI:", params.redirect_uri)
+
       const response = await fetch(provider.token.url, {
         method: "POST",
         headers: {
@@ -37,7 +41,11 @@ const RaindropProvider = {
         }),
       })
 
-      const tokens = await response.json()
+      console.log("[raindrop][token] Response status:", response.status)
+      const responseText = await response.text()
+      console.log("[raindrop][token] Response body:", responseText.substring(0, 200))
+
+      const tokens = JSON.parse(responseText)
 
       return {
         tokens,
@@ -57,16 +65,18 @@ const RaindropProvider = {
   },
 }
 
-export const authConfig: NextAuthConfig = {
+export const { handlers, auth, signIn, signOut } = NextAuth({
+  ...authConfig,
   adapter: DrizzleAdapter(db),
   providers: [RaindropProvider],
-  pages: {
-    signIn: "/login",
-  },
   callbacks: {
+    ...authConfig.callbacks,
     async signIn({ user, account }) {
       // Raindrop.ioのトークンを暗号化してusersテーブルに保存
       if (account?.provider === "raindrop" && account.access_token && user.id) {
+        // 動的インポート（Edge Runtimeの問題を回避）
+        const { encrypt } = await import("@/lib/crypto")
+
         const encryptedAccessToken = encrypt(account.access_token)
         const encryptedRefreshToken = account.refresh_token
           ? encrypt(account.refresh_token)
@@ -90,21 +100,8 @@ export const authConfig: NextAuthConfig = {
 
       return true
     },
-    authorized({ auth, request: { nextUrl } }) {
-      const isLoggedIn = !!auth?.user
-      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard")
-
-      if (isOnDashboard) {
-        if (isLoggedIn) return true
-        return false // ログインページにリダイレクト
-      }
-
-      return true
-    },
   },
   session: {
     strategy: "database",
   },
-}
-
-export const { handlers, auth, signIn, signOut } = NextAuth(authConfig)
+})
