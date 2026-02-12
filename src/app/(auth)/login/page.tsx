@@ -1,4 +1,4 @@
-import Link from "next/link"
+import { signIn } from "@/auth"
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -24,7 +24,11 @@ export default async function LoginPage({ searchParams }: Props) {
                   ログインエラー
                 </h3>
                 <div className="mt-2 text-sm text-red-700">
-                  <p>{typeof error === 'string' ? decodeURIComponent(error) : 'ログインに失敗しました'}</p>
+                  <p>
+                    {typeof error === "string"
+                      ? decodeURIComponent(error)
+                      : "ログインに失敗しました"}
+                  </p>
                 </div>
               </div>
             </div>
@@ -32,12 +36,19 @@ export default async function LoginPage({ searchParams }: Props) {
         )}
 
         <div className="mt-8 space-y-6">
-          <Link
-            href="/api/auth/signin/raindrop"
-            className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          <form
+            action={async () => {
+              "use server"
+              await signIn("raindrop", { redirectTo: "/dashboard" })
+            }}
           >
-            Raindrop.ioでログイン
-          </Link>
+            <button
+              type="submit"
+              className="flex w-full justify-center rounded-md border border-transparent bg-indigo-600 px-4 py-3 text-sm font-medium text-white shadow-sm transition-colors hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+            >
+              Raindrop.ioでログイン
+            </button>
+          </form>
 
           <div className="text-center text-xs text-gray-500">
             <p>
