@@ -123,10 +123,10 @@ export async function GET(request: NextRequest) {
     const cookieValue = JSON.stringify(sessionData)
     console.log("[raindrop][callback] Setting session cookie:", cookieValue.substring(0, 100))
 
-    // リダイレクトレスポンスを作成
-    const response = NextResponse.redirect(new URL("/dashboard", request.url))
+    // 中間ページにリダイレクト（Cookieを設定してからクライアント側でリダイレクト）
+    const response = NextResponse.redirect(new URL("/api/auth/raindrop/success", request.url))
 
-    // ResponseにCookieを設定（NextResponseのAPIを使用）
+    // ResponseにCookieを設定
     response.cookies.set({
       name: "raindrop-session",
       value: cookieValue,
@@ -137,9 +137,8 @@ export async function GET(request: NextRequest) {
       path: "/",
     })
 
-    console.log("[raindrop][callback] Cookie set via response.cookies.set")
+    console.log("[raindrop][callback] Cookie set, redirecting to success page")
     console.log("[raindrop][callback] Cookie value:", cookieValue.substring(0, 100))
-    console.log("[raindrop][callback] Headers:", JSON.stringify(Object.fromEntries(response.headers)))
 
     return response
   } catch (error) {
