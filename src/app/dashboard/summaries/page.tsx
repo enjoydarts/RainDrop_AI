@@ -43,7 +43,7 @@ export default async function SummariesPage() {
           {items.map((item) => (
             <Link
               key={item.id}
-              href={`/dashboard/summaries/${item.id}`}
+              href={`/summaries/${item.id}`}
               className="rounded-lg bg-white p-6 shadow transition-shadow hover:shadow-md"
             >
               <div className="mb-4 flex items-start justify-between">

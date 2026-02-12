@@ -4,7 +4,7 @@ import { db } from "@/db"
 import { raindrops } from "@/db/schema"
 import { eq, desc, isNull, and } from "drizzle-orm"
 import Image from "next/image"
-import { triggerImport } from "./actions"
+// import { triggerImport } from "./actions"
 
 export default async function RaindropsPage() {
   const session = await auth()
@@ -27,7 +27,10 @@ export default async function RaindropsPage() {
     <div className="px-4 sm:px-0">
       <div className="mb-8 sm:flex sm:items-center sm:justify-between">
         <h1 className="text-3xl font-bold text-gray-900">記事一覧</h1>
-        <form action={triggerImport}>
+        <form action={async () => {
+          "use server"
+          console.log("Trigger import button clicked")
+        }}>
           <button
             type="submit"
             className="mt-4 inline-flex items-center rounded-md border border-transparent bg-indigo-600 px-4 py-2 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 sm:mt-0"

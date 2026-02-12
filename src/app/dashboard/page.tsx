@@ -175,7 +175,7 @@ export default async function DashboardPage() {
             {recentSummaries.map((summary) => (
               <Link
                 key={summary.id}
-                href={`/dashboard/summaries/${summary.id}`}
+                href={`/summaries/${summary.id}`}
                 className="block rounded-lg bg-white p-4 shadow transition-shadow hover:shadow-md"
               >
                 <div className="flex items-center justify-between">
