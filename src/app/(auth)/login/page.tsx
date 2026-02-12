@@ -1,4 +1,5 @@
 import { signIn } from "@/auth"
+import { redirect } from "next/navigation"
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>

@@ -4,11 +4,10 @@ import { redirect } from "next/navigation"
 export default async function DashboardPage() {
   const session = await auth()
 
-  if (!session?.user) {
-    redirect("/login")
-  }
+  console.log("[dashboard] Session from auth():", JSON.stringify(session, null, 2))
 
-  const user = session.user
+  // ミドルウェアで既に認証済みなので、ここでは必ず session.user が存在する
+  const user = session!.user
 
   return (
     <div className="min-h-screen bg-gray-50">

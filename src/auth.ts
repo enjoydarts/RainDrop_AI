@@ -36,6 +36,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   ...authConfig,
   adapter: DrizzleAdapter(db),
   providers: [RaindropProvider],
+  trustHost: true,
   // JWTセッションを使用（Edge Runtime対応）
   session: {
     strategy: "jwt",
@@ -56,14 +57,23 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token
     },
     async session({ session, token }) {
-      console.log("[auth][session] Session callback called", {
-        hasSub: !!token.sub,
-        userId: session.user?.id,
-      })
+      console.log("[auth][session] Session callback called")
+      console.log("[auth][session] Token sub:", token.sub)
+      console.log("[auth][session] Session object:", JSON.stringify(session, null, 2))
+      console.log("[auth][session] Session.user:", JSON.stringify(session.user, null, 2))
+
       // トークンからセッションにユーザー情報をコピー
-      if (token.sub) {
+      if (token.sub && session.user) {
         session.user.id = token.sub
+        console.log("[auth][session] Set user.id to:", token.sub)
+      } else {
+        console.log("[auth][session] WARNING: Cannot set user.id", {
+          hasSub: !!token.sub,
+          hasUser: !!session.user,
+        })
       }
+
+      console.log("[auth][session] Returning session:", JSON.stringify(session, null, 2))
       return session
     },
     async signIn({ user, account }) {
