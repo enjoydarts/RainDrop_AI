@@ -17,41 +17,8 @@ const RaindropProvider = {
       scope: "",
     },
   },
-  token: {
-    url: "https://raindrop.io/oauth/access_token",
-    async request(context: any) {
-      const { params, provider } = context
-
-      console.log("[raindrop][token] Starting token exchange")
-      console.log("[raindrop][token] Code:", params.code?.substring(0, 8))
-      console.log("[raindrop][token] Redirect URI:", params.redirect_uri)
-
-      const response = await fetch(provider.token.url, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Accept: "application/json",
-        },
-        body: JSON.stringify({
-          grant_type: "authorization_code",
-          code: params.code,
-          client_id: provider.clientId,
-          client_secret: provider.clientSecret,
-          redirect_uri: params.redirect_uri,
-        }),
-      })
-
-      console.log("[raindrop][token] Response status:", response.status)
-      const responseText = await response.text()
-      console.log("[raindrop][token] Response body:", responseText.substring(0, 200))
-
-      const tokens = JSON.parse(responseText)
-
-      return {
-        tokens,
-      }
-    },
-  },
+  // プロキシエンドポイントを使用（NextAuthの標準OAuth2フローに対応）
+  token: `${process.env.NEXTAUTH_URL}/api/auth/raindrop-proxy/token`,
   userinfo: "https://api.raindrop.io/rest/v1/user",
   clientId: process.env.AUTH_RAINDROP_ID,
   clientSecret: process.env.AUTH_RAINDROP_SECRET,
