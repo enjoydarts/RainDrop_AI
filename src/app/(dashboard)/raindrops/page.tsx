@@ -4,21 +4,61 @@ import { db } from "@/db"
 import { raindrops } from "@/db/schema"
 import { eq, desc, isNull, and } from "drizzle-orm"
 import Image from "next/image"
+import { inngest } from "@/inngest/client"
+import { revalidatePath } from "next/cache"
 
 async function triggerImport() {
   "use server"
 
-  const res = await fetch(`${process.env.NEXTAUTH_URL}/api/import/trigger`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized")
+  }
+
+  // Inngestイベントを直接送信
+  await inngest.send({
+    name: "raindrop/import.requested",
+    data: {
+      userId: session.user.id,
     },
-    body: JSON.stringify({}),
   })
 
-  if (!res.ok) {
-    throw new Error("Import failed")
+  // ページをリフレッシュ
+  revalidatePath("/dashboard/raindrops")
+}
+
+async function generateSummary(raindropId: number, tone: string = "neutral") {
+  "use server"
+
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized")
   }
+
+  // 本文抽出イベントを送信（まだ抽出されていない場合）
+  await inngest.send({
+    name: "raindrop/item.extract.requested",
+    data: {
+      userId: session.user.id,
+      raindropId,
+    },
+  })
+
+  // 要約生成イベントを送信
+  await inngest.send({
+    name: "raindrop/item.summarize.requested",
+    data: {
+      userId: session.user.id,
+      raindropId,
+      tone: tone as "snarky" | "neutral" | "enthusiastic" | "casual",
+    },
+  })
+
+  // ページをリフレッシュ
+  revalidatePath("/dashboard/raindrops")
+  revalidatePath("/dashboard/summaries")
 }
 
 export default async function RaindropsPage() {
@@ -99,6 +139,24 @@ export default async function RaindropsPage() {
                             )}
                           </span>
                         ) : null}
+                    </div>
+                    <div className="mt-3">
+                      <form
+                        action={async () => {
+                          "use server"
+                          await generateSummary(Number(item.id))
+                        }}
+                      >
+                        <button
+                          type="submit"
+                          className="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
+                        >
+                          <svg className="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                          </svg>
+                          要約を生成
+                        </button>
+                      </form>
                     </div>
                   </div>
                   {item.cover && (
