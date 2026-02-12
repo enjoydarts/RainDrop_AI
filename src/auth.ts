@@ -43,6 +43,11 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
   callbacks: {
     ...authConfig.callbacks,
     async jwt({ token, account, profile }) {
+      console.log("[auth][jwt] JWT callback called", {
+        hasAccount: !!account,
+        hasProfile: !!profile,
+        sub: token.sub,
+      })
       // 初回ログイン時にアカウント情報をトークンに追加
       if (account && profile) {
         token.accessToken = account.access_token
@@ -51,6 +56,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token
     },
     async session({ session, token }) {
+      console.log("[auth][session] Session callback called", {
+        hasSub: !!token.sub,
+        userId: session.user?.id,
+      })
       // トークンからセッションにユーザー情報をコピー
       if (token.sub) {
         session.user.id = token.sub
@@ -58,6 +67,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return session
     },
     async signIn({ user, account }) {
+      console.log("[auth][signIn] ===== SIGNIN CALLBACK STARTED =====")
+      console.log("[auth][signIn] User:", user?.id, user?.email)
+      console.log("[auth][signIn] Account provider:", account?.provider)
+      console.log("[auth][signIn] Has access token:", !!account?.access_token)
       try {
         console.log("[auth][signIn] Starting signIn callback", {
           userId: user.id,
