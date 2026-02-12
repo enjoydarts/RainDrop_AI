@@ -8,6 +8,13 @@
       "when": 1770809105919,
       "tag": "0000_striped_champions",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1770859713599,
+      "tag": "0001_grey_mentor",
+      "breakpoints": true
     }
   ]
 }

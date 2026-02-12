@@ -2,9 +2,16 @@ import { NextRequest } from "next/server"
 
 /**
  * OAuth成功後の中間ページ
- * Cookieを設定してからクライアント側でリダイレクト
+ * クライアント側でCookieを設定してからリダイレクト
  */
 export async function GET(request: NextRequest) {
+  const searchParams = request.nextUrl.searchParams
+  const sessionId = searchParams.get("session")
+
+  if (!sessionId) {
+    return NextResponse.redirect(new URL("/login?error=no_session", request.url))
+  }
+
   const html = `
 <!DOCTYPE html>
 <html>
@@ -53,7 +60,16 @@ export async function GET(request: NextRequest) {
     <p>ダッシュボードに移動しています...</p>
   </div>
   <script>
-    // クライアント側でリダイレクト（Cookieが保存された後）
+    // セッションIDをCookieに保存
+    const sessionId = '${sessionId}';
+    const maxAge = 7 * 24 * 60 * 60; // 7日（秒）
+    const secure = ${process.env.NODE_ENV === "production" ? "true" : "false"};
+
+    document.cookie = \`raindrop-session=\${sessionId}; path=/; max-age=\${maxAge}; samesite=lax\${secure ? '; secure' : ''}\`;
+
+    console.log('Cookie set:', document.cookie);
+
+    // ダッシュボードにリダイレクト
     setTimeout(() => {
       window.location.href = '/dashboard';
     }, 500);

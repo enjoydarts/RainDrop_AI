@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server"
-import { cookies } from "next/headers"
 import { db } from "@/db"
-import { users } from "@/db/schema"
+import { users, sessions } from "@/db/schema"
 import { encrypt } from "@/lib/crypto"
 
 /**
@@ -112,35 +111,25 @@ export async function GET(request: NextRequest) {
 
     console.log("[raindrop][callback] User saved to database")
 
-    // Step 4: セッションを作成
-    const sessionData = {
-      userId: raindropUser._id.toString(),
-      email: raindropUser.email,
-      name: raindropUser.fullName || raindropUser.email,
-      image: raindropUser.avatar || null,
-    }
+    // Step 4: セッションを作成（DBに保存）
+    const expiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) // 7日後
+    const [session] = await db
+      .insert(sessions)
+      .values({
+        userId: raindropUser._id.toString(),
+        expiresAt,
+      })
+      .returning()
 
-    const cookieValue = JSON.stringify(sessionData)
-    console.log("[raindrop][callback] Setting session cookie:", cookieValue.substring(0, 100))
+    console.log("[raindrop][callback] Session created:", session.id)
 
-    // 中間ページにリダイレクト（Cookieを設定してからクライアント側でリダイレクト）
-    const response = NextResponse.redirect(new URL("/api/auth/raindrop/success", request.url))
+    // 中間ページにリダイレクト（クライアント側でCookieを設定）
+    const successUrl = new URL("/api/auth/raindrop/success", request.url)
+    successUrl.searchParams.set("session", session.id)
 
-    // ResponseにCookieを設定
-    response.cookies.set({
-      name: "raindrop-session",
-      value: cookieValue,
-      httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
-      sameSite: "lax",
-      maxAge: 60 * 60 * 24 * 7,
-      path: "/",
-    })
+    console.log("[raindrop][callback] Redirecting to success page with session ID")
 
-    console.log("[raindrop][callback] Cookie set, redirecting to success page")
-    console.log("[raindrop][callback] Cookie value:", cookieValue.substring(0, 100))
-
-    return response
+    return NextResponse.redirect(successUrl)
   } catch (error) {
     console.error("[raindrop][callback] Error:", error)
     const errorMessage = error instanceof Error ? error.message : "Unknown error"

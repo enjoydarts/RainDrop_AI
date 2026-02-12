@@ -12,14 +12,14 @@ export function middleware(request: NextRequest) {
     return NextResponse.next()
   }
 
-  // セッションCookieをチェック
+  // セッションCookieをチェック（セッションIDのみ）
   const sessionCookie = request.cookies.get("raindrop-session")
 
   // ダッシュボードなど保護されたページ
   if (pathname.startsWith("/dashboard")) {
     console.log("[middleware] Checking session for /dashboard")
     console.log("[middleware] Session cookie exists:", !!sessionCookie)
-    console.log("[middleware] All cookies:", request.cookies.getAll().map(c => c.name))
+    console.log("[middleware] All cookies:", request.cookies.getAll().map((c) => c.name))
 
     if (!sessionCookie) {
       // セッションがない場合はログインページにリダイレクト
@@ -28,17 +28,17 @@ export function middleware(request: NextRequest) {
       return NextResponse.redirect(loginUrl)
     }
 
-    // セッションCookieが有効か確認
-    try {
-      const session = JSON.parse(sessionCookie.value)
-      console.log("[middleware] Valid session for user:", session.email)
-      return NextResponse.next()
-    } catch {
-      // 無効なセッションCookieの場合はログインページにリダイレクト
-      console.log("[middleware] Invalid session cookie, redirecting to /login")
+    // セッションIDの形式が正しいか確認（UUIDパターン）
+    const uuidPattern =
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i
+    if (!uuidPattern.test(sessionCookie.value)) {
+      console.log("[middleware] Invalid session ID format, redirecting to /login")
       const loginUrl = new URL("/login", request.url)
       return NextResponse.redirect(loginUrl)
     }
+
+    console.log("[middleware] Valid session ID format:", sessionCookie.value.substring(0, 8))
+    return NextResponse.next()
   }
 
   return NextResponse.next()

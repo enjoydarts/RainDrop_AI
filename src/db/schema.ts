@@ -108,6 +108,27 @@ export const summaries = pgTable(
 )
 
 /**
+ * セッションテーブル
+ * クライアント側Cookie用のセッション管理
+ */
+export const sessions = pgTable(
+  "sessions",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    // インデックス
+    userIdx: index("idx_sessions_user").on(table.userId),
+    expiresIdx: index("idx_sessions_expires").on(table.expiresAt),
+  })
+)
+
+/**
  * API使用状況テーブル
  * コスト追跡のためのAPI呼び出し記録
  */
@@ -140,7 +161,15 @@ export const apiUsage = pgTable(
 export const usersRelations = relations(users, ({ many }) => ({
   raindrops: many(raindrops),
   summaries: many(summaries),
+  sessions: many(sessions),
   apiUsage: many(apiUsage),
+}))
+
+export const sessionsRelations = relations(sessions, ({ one }) => ({
+  user: one(users, {
+    fields: [sessions.userId],
+    references: [users.id],
+  }),
 }))
 
 export const raindropsRelations = relations(raindrops, ({ one, many }) => ({
@@ -175,6 +204,9 @@ export const apiUsageRelations = relations(apiUsage, ({ one }) => ({
  */
 export type User = typeof users.$inferSelect
 export type NewUser = typeof users.$inferInsert
+
+export type Session = typeof sessions.$inferSelect
+export type NewSession = typeof sessions.$inferInsert
 
 export type Raindrop = typeof raindrops.$inferSelect
 export type NewRaindrop = typeof raindrops.$inferInsert
