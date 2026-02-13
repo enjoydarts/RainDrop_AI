@@ -1,0 +1,12 @@
+services:
+  - type: web
+    name: raindary-extract
+    runtime: docker
+    dockerfilePath: ./services/extract/Dockerfile.prod
+    dockerContext: ./services/extract
+    region: singapore
+    plan: free
+    healthCheckPath: /health
+    envVars:
+      - key: PORT
+        value: 8000
