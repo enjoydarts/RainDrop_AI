@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, HttpUrl
 import trafilatura
+import requests
 
 app = FastAPI(
     title="Raindrop AI - Extract Service",
@@ -48,13 +49,25 @@ async def extract_content(request: ExtractRequest):
     print(f"[extract] Received request for URL: {request.url}")
     try:
         # URLからコンテンツをダウンロード
-        downloaded = trafilatura.fetch_url(str(request.url))
+        # まずrequestsで直接ダウンロードを試行（User-Agent設定）
+        headers = {
+            "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+        }
+
+        try:
+            response = requests.get(str(request.url), headers=headers, timeout=15)
+            response.raise_for_status()
+            downloaded = response.text
+        except requests.RequestException as e:
+            print(f"[extract] HTTP request failed for URL: {request.url}, error: {e}")
+            # requestsで失敗した場合はtrafilaturaのデフォルトfetch_urlを試す
+            downloaded = trafilatura.fetch_url(str(request.url))
 
         if not downloaded:
             print(f"[extract] Failed to download URL: {request.url}")
             raise HTTPException(
                 status_code=404,
-                detail="Content not found or failed to download"
+                detail="記事の内容を取得できませんでした。サイトがログインを要求している、JavaScriptが必要、またはアクセスがブロックされている可能性があります。"
             )
 
         # 本文を抽出（JSON形式で取得）

@@ -25,23 +25,36 @@ export const raindropSummarize = inngest.createFunction(
     ],
     onFailure: async ({ event, error }) => {
       // 失敗時にDBに記録
-      const { userId, raindropId, tone } = event.data.event.data
+      const { userId, raindropId, tone, summaryId } = event.data.event.data
 
       try {
-        await db
-          .update(summaries)
-          .set({
-            status: "failed",
-            error: error.message,
-            updatedAt: new Date(),
-          })
-          .where(
-            and(
-              eq(summaries.userId, userId),
-              eq(summaries.raindropId, raindropId),
-              eq(summaries.tone, tone)
+        if (summaryId) {
+          // summaryIdがある場合はIDで更新
+          await db
+            .update(summaries)
+            .set({
+              status: "failed",
+              error: error.message,
+              updatedAt: new Date(),
+            })
+            .where(eq(summaries.id, summaryId))
+        } else {
+          // summaryIdがない場合はユーザーID+raindropID+toneで更新
+          await db
+            .update(summaries)
+            .set({
+              status: "failed",
+              error: error.message,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(summaries.userId, userId),
+                eq(summaries.raindropId, raindropId),
+                eq(summaries.tone, tone)
+              )
             )
-          )
+        }
       } catch (dbError) {
         console.error("Failed to update summary status:", dbError)
       }
@@ -49,7 +62,7 @@ export const raindropSummarize = inngest.createFunction(
   },
   { event: "raindrop/item.summarize.requested" },
   async ({ event, step }) => {
-    const { userId, raindropId, tone } = event.data
+    const { userId, raindropId, tone, summaryId } = event.data
 
     // Raindropを取得
     const raindrop = await step.run("fetch-raindrop", async () => {
@@ -74,29 +87,50 @@ export const raindropSummarize = inngest.createFunction(
       return record
     })
 
-    // Summaryレコードを作成
-    const summary = await step.run("create-summary", async () => {
-      const [record] = await db
-        .insert(summaries)
-        .values({
-          userId,
-          raindropId,
-          tone: tone as Tone,
-          summary: "", // 一旦空で作成
-          model: MODELS.SONNET,
-          status: "processing",
-        })
-        .onConflictDoUpdate({
-          target: [summaries.userId, summaries.raindropId, summaries.tone],
-          set: {
+    // Summaryレコードを作成または更新
+    const summary = await step.run("create-or-update-summary", async () => {
+      if (summaryId) {
+        // summaryIdがある場合は既存レコードを更新
+        const [record] = await db
+          .update(summaries)
+          .set({
             status: "processing",
             error: null,
+            model: MODELS.SONNET,
             updatedAt: new Date(),
-          },
-        })
-        .returning()
+          })
+          .where(eq(summaries.id, summaryId))
+          .returning()
 
-      return record
+        if (!record) {
+          throw new NonRetriableError(`Summary not found: summaryId=${summaryId}`)
+        }
+
+        return record
+      } else {
+        // summaryIdがない場合は新規作成（後方互換性のため）
+        const [record] = await db
+          .insert(summaries)
+          .values({
+            userId,
+            raindropId,
+            tone: tone as Tone,
+            summary: "", // 一旦空で作成
+            model: MODELS.SONNET,
+            status: "processing",
+          })
+          .onConflictDoUpdate({
+            target: [summaries.userId, summaries.raindropId, summaries.tone],
+            set: {
+              status: "processing",
+              error: null,
+              updatedAt: new Date(),
+            },
+          })
+          .returning()
+
+        return record
+      }
     })
 
     // Step1: 事実抽出（Haiku）

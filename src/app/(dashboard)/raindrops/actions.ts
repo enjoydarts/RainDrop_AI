@@ -57,21 +57,33 @@ export async function generateSummary(raindropId: number, tone: string = "neutra
     throw new Error("Unauthorized")
   }
 
-  // 本文抽出イベントを送信（まだ抽出されていない場合）
+  const userId = session.user.id
+
+  // summariesテーブルにレコードを作成（status: pending）
+  const { db } = await import("@/db")
+  const { summaries } = await import("@/db/schema")
+
+  const [summary] = await db
+    .insert(summaries)
+    .values({
+      userId,
+      raindropId,
+      tone: tone as "snarky" | "neutral" | "enthusiastic" | "casual",
+      summary: "", // 空で作成
+      model: "pending",
+      status: "pending",
+    })
+    .returning()
+
+  console.log("[generateSummary] Created summary record:", summary.id)
+
+  // 本文抽出イベントを送信（extractで失敗した場合はsummaryを更新）
   await inngest.send({
     name: "raindrop/item.extract.requested",
     data: {
-      userId: session.user.id,
+      userId,
       raindropId,
-    },
-  })
-
-  // 要約生成イベントを送信
-  await inngest.send({
-    name: "raindrop/item.summarize.requested",
-    data: {
-      userId: session.user.id,
-      raindropId,
+      summaryId: summary.id, // summaryIdを渡す
       tone: tone as "snarky" | "neutral" | "enthusiastic" | "casual",
     },
   })
@@ -79,6 +91,8 @@ export async function generateSummary(raindropId: number, tone: string = "neutra
   // ページをリフレッシュ
   revalidatePath("/raindrops")
   revalidatePath("/summaries")
+
+  return { summaryId: summary.id }
 }
 
 export async function deleteRaindrop(raindropId: number) {
