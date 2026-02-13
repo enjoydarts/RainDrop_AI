@@ -45,11 +45,13 @@ async def extract_content(request: ExtractRequest):
         HTTPException: 422 - 抽出に失敗
         HTTPException: 500 - その他のエラー
     """
+    print(f"[extract] Received request for URL: {request.url}")
     try:
         # URLからコンテンツをダウンロード
         downloaded = trafilatura.fetch_url(str(request.url))
 
         if not downloaded:
+            print(f"[extract] Failed to download URL: {request.url}")
             raise HTTPException(
                 status_code=404,
                 detail="Content not found or failed to download"
@@ -64,6 +66,7 @@ async def extract_content(request: ExtractRequest):
         )
 
         if not result:
+            print(f"[extract] Extraction failed for URL: {request.url}")
             raise HTTPException(
                 status_code=422,
                 detail="Extraction failed - content may not be an article"
@@ -75,10 +78,10 @@ async def extract_content(request: ExtractRequest):
 
         # レスポンスを構築
         return ExtractResponse(
-            title=data.get("title", ""),
-            text=data.get("text", ""),
-            length=len(data.get("text", "")),
-            language=data.get("language", "unknown"),
+            title=data.get("title") or "",
+            text=data.get("text") or "",
+            length=len(data.get("text") or ""),
+            language=data.get("language") or "unknown",
         )
 
     except HTTPException:
@@ -86,6 +89,9 @@ async def extract_content(request: ExtractRequest):
         raise
     except Exception as e:
         # その他のエラーは500として返す
+        print(f"[extract] Exception for URL {request.url}: {str(e)}")
+        import traceback
+        traceback.print_exc()
         raise HTTPException(
             status_code=500,
             detail=f"Internal server error: {str(e)}"
