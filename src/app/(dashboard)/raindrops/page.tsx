@@ -5,6 +5,7 @@ import { raindrops } from "@/db/schema"
 import { eq, desc, isNull, and } from "drizzle-orm"
 import Image from "next/image"
 import { ImportButton } from "./import-button"
+import { SummaryButton } from "./summary-button"
 
 export default async function RaindropsPage() {
   const session = await auth()
@@ -25,83 +26,79 @@ export default async function RaindropsPage() {
 
   return (
     <div className="px-4 sm:px-0">
-      <div className="mb-8 sm:flex sm:items-center sm:justify-between">
-        <h1 className="text-3xl font-bold text-gray-900">記事一覧</h1>
+      <div className="mb-8 sm:flex sm:items-center sm:justify-between border-b border-gray-200 pb-6">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight text-gray-900">記事一覧</h1>
+          <p className="mt-2 text-sm text-gray-600">{items.length}件の記事</p>
+        </div>
         <ImportButton />
       </div>
 
       {items.length === 0 ? (
-        <div className="rounded-lg bg-white shadow">
-          <div className="px-4 py-12 text-center">
-            <p className="mb-4 text-gray-500">まだ記事が取り込まれていません</p>
-            <p className="text-sm text-gray-400">
+        <div className="rounded-xl border border-gray-200 bg-white shadow-sm">
+          <div className="px-4 py-16 text-center">
+            <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+              <svg className="h-6 w-6 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+              </svg>
+            </div>
+            <h3 className="text-base font-semibold text-gray-900 mb-2">まだ記事が取り込まれていません</h3>
+            <p className="text-sm text-gray-500 max-w-sm mx-auto">
               「今すぐ取り込む」ボタンをクリックして、Raindrop.ioから記事を取り込んでください。
             </p>
           </div>
         </div>
       ) : (
-        <div className="overflow-hidden rounded-lg bg-white shadow">
-          <ul className="divide-y divide-gray-200">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm">
+          <ul className="divide-y divide-gray-100">
             {items.map((item) => (
-              <li key={item.id} className="p-4 hover:bg-gray-50">
-                <div className="flex items-start justify-between">
+              <li key={item.id} className="p-5 hover:bg-gray-50/50 transition-colors">
+                <div className="flex items-start justify-between gap-4">
                   <div className="min-w-0 flex-1">
                     <a
                       href={item.link}
                       target="_blank"
                       rel="noopener noreferrer"
-                      className="text-sm font-medium text-indigo-600 hover:text-indigo-500"
+                      className="text-base font-semibold text-gray-900 hover:text-indigo-600 transition-colors line-clamp-2"
                     >
                       {item.title}
                     </a>
                     {item.excerpt && (
-                      <p className="mt-1 line-clamp-2 text-sm text-gray-500">
+                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-600">
                         {item.excerpt}
                       </p>
                     )}
-                    <div className="mt-2 flex items-center space-x-4 text-xs text-gray-400">
-                      <span>
+                    <div className="mt-3 flex items-center gap-3 text-xs text-gray-500">
+                      <span className="flex items-center gap-1">
+                        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        </svg>
                         {new Date(item.createdAtRemote).toLocaleDateString("ja-JP")}
                       </span>
                       {item.tags &&
                         Array.isArray(item.tags) &&
-                        (item.tags as unknown[]).length > 0 ? (
-                          <span suppressHydrationWarning>
+                        (item.tags as unknown[]).length > 0 && (
+                          <span className="flex items-center gap-1" suppressHydrationWarning>
+                            <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 7h.01M7 3h5c.512 0 1.024.195 1.414.586l7 7a2 2 0 010 2.828l-7 7a2 2 0 01-2.828 0l-7-7A1.994 1.994 0 013 12V7a4 4 0 014-4z" />
+                            </svg>
                             {String(
                               (item.tags as unknown as string[]).slice(0, 3).join(", ")
                             )}
                           </span>
-                        ) : null}
+                        )}
                     </div>
-                    <div className="mt-3">
-                      <form
-                        action={async (formData: FormData) => {
-                          "use server"
-                          const { generateSummary } = await import("./actions")
-                          const raindropId = Number(formData.get("raindropId"))
-                          await generateSummary(raindropId)
-                        }}
-                      >
-                        <input type="hidden" name="raindropId" value={item.id} />
-                        <button
-                          type="submit"
-                          className="inline-flex items-center rounded-md bg-green-600 px-3 py-1.5 text-xs font-medium text-white shadow-sm hover:bg-green-700 focus:outline-none focus:ring-2 focus:ring-green-500 focus:ring-offset-2"
-                        >
-                          <svg className="mr-1.5 h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                          </svg>
-                          要約を生成
-                        </button>
-                      </form>
+                    <div className="mt-4">
+                      <SummaryButton raindropId={item.id} />
                     </div>
                   </div>
                   {item.cover && (
                     <Image
                       src={item.cover}
                       alt=""
-                      width={64}
-                      height={64}
-                      className="ml-4 h-16 w-16 flex-shrink-0 rounded object-cover"
+                      width={96}
+                      height={96}
+                      className="ml-4 h-24 w-24 flex-shrink-0 rounded-lg object-cover border border-gray-200"
                     />
                   )}
                 </div>

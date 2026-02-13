@@ -3,15 +3,25 @@ import { apiUsage } from "@/db/schema"
 
 /**
  * Anthropic API価格表（2026年2月時点）
+ * https://platform.claude.com/docs/en/about-claude/models/overview
  */
 const ANTHROPIC_PRICING = {
-  "claude-3-5-sonnet-20241022": {
+  "claude-sonnet-4-5": {
     input: 3.0 / 1_000_000, // $3.00 per 1M tokens
     output: 15.0 / 1_000_000, // $15.00 per 1M tokens
   },
+  "claude-haiku-4-5": {
+    input: 1.0 / 1_000_000, // $1.00 per 1M tokens
+    output: 5.0 / 1_000_000, // $5.00 per 1M tokens
+  },
+  // 旧モデル名との互換性（存在する場合）
+  "claude-3-5-sonnet-20241022": {
+    input: 3.0 / 1_000_000,
+    output: 15.0 / 1_000_000,
+  },
   "claude-3-5-haiku-20241022": {
-    input: 0.8 / 1_000_000, // $0.80 per 1M tokens
-    output: 4.0 / 1_000_000, // $4.00 per 1M tokens
+    input: 1.0 / 1_000_000,
+    output: 5.0 / 1_000_000,
   },
 } as const
 

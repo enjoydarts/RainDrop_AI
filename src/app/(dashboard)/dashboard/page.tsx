@@ -56,11 +56,11 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* ウェルカムセクション */}
-      <div>
-        <h1 className="text-3xl font-bold text-gray-900">
+      <div className="border-b border-gray-200 pb-6">
+        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
           ようこそ、{user.name}さん
         </h1>
-        <p className="mt-2 text-gray-600">
+        <p className="mt-3 text-base text-gray-600">
           Raindrop.ioから記事を取り込んで、AI要約を生成しましょう
         </p>
       </div>
@@ -68,74 +68,74 @@ export default async function DashboardPage() {
       {/* 統計カード */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {/* 記事数 */}
-        <div className="overflow-hidden rounded-lg bg-white shadow">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
           <div className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 rounded-md bg-indigo-500 p-3">
-                <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
-                </svg>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <dt className="text-sm font-medium text-gray-500 mb-2">保存済み記事</dt>
+                <dd className="text-4xl font-bold text-gray-900">{raindropCount.count}</dd>
               </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="truncate text-sm font-medium text-gray-500">保存済み記事</dt>
-                  <dd className="mt-1 text-3xl font-semibold text-gray-900">{raindropCount.count}</dd>
-                </dl>
+              <div className="flex-shrink-0 rounded-lg bg-indigo-50 p-3">
+                <svg className="h-7 w-7 text-indigo-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                </svg>
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 px-6 py-3">
-            <Link href="/raindrops" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
-              記事一覧を見る →
+          <div className="border-t border-gray-100 bg-gray-50/50 px-6 py-3">
+            <Link href="/raindrops" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
+              記事一覧を見る
+              <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           </div>
         </div>
 
         {/* 要約数 */}
-        <div className="overflow-hidden rounded-lg bg-white shadow">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
           <div className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 rounded-md bg-green-500 p-3">
-                <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
-                </svg>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <dt className="text-sm font-medium text-gray-500 mb-2">生成済み要約</dt>
+                <dd className="text-4xl font-bold text-gray-900">{summaryCount.count}</dd>
               </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="truncate text-sm font-medium text-gray-500">生成済み要約</dt>
-                  <dd className="mt-1 text-3xl font-semibold text-gray-900">{summaryCount.count}</dd>
-                </dl>
+              <div className="flex-shrink-0 rounded-lg bg-green-50 p-3">
+                <svg className="h-7 w-7 text-green-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 px-6 py-3">
-            <Link href="/summaries" className="text-sm font-medium text-green-600 hover:text-green-500">
-              要約一覧を見る →
+          <div className="border-t border-gray-100 bg-gray-50/50 px-6 py-3">
+            <Link href="/summaries" className="text-sm font-semibold text-green-600 hover:text-green-700 flex items-center gap-1 group">
+              要約一覧を見る
+              <svg className="h-4 w-4 transition-transform group-hover:translate-x-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+              </svg>
             </Link>
           </div>
         </div>
 
         {/* 今月のコスト */}
-        <div className="overflow-hidden rounded-lg bg-white shadow">
+        <div className="overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm hover:shadow-md transition-shadow">
           <div className="p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0 rounded-md bg-purple-500 p-3">
-                <svg className="h-6 w-6 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
+            <div className="flex items-center justify-between">
+              <div className="flex-1">
+                <dt className="text-sm font-medium text-gray-500 mb-2">今月のAPI利用</dt>
+                <dd className="text-4xl font-bold text-gray-900" suppressHydrationWarning>
+                  ${totalCost.toFixed(4)}
+                </dd>
               </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="truncate text-sm font-medium text-gray-500">今月のAPI利用</dt>
-                  <dd className="mt-1 text-3xl font-semibold text-gray-900" suppressHydrationWarning>
-                    ${totalCost.toFixed(4)}
-                  </dd>
-                </dl>
+              <div className="flex-shrink-0 rounded-lg bg-purple-50 p-3">
+                <svg className="h-7 w-7 text-purple-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
               </div>
             </div>
           </div>
-          <div className="bg-gray-50 px-6 py-3">
-            <span className="text-sm text-gray-500">
+          <div className="border-t border-gray-100 bg-gray-50/50 px-6 py-3">
+            <span className="text-sm text-gray-600">
               {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' })}
             </span>
           </div>
@@ -143,20 +143,23 @@ export default async function DashboardPage() {
       </div>
 
       {/* クイックアクション */}
-      <div className="rounded-lg bg-gradient-to-r from-indigo-500 to-purple-600 p-6 shadow-lg">
+      <div className="rounded-xl border-2 border-indigo-200 bg-indigo-50 p-8 shadow-sm">
         <div className="sm:flex sm:items-center sm:justify-between">
-          <div>
-            <h2 className="text-xl font-semibold text-white">記事を取り込む</h2>
-            <p className="mt-1 text-sm text-indigo-100">
+          <div className="flex-1">
+            <h2 className="text-2xl font-bold text-indigo-900">記事を取り込む</h2>
+            <p className="mt-2 text-base text-indigo-700">
               Raindrop.ioから最新の記事を同期して、AI要約を生成しましょう
             </p>
           </div>
-          <div className="mt-4 sm:mt-0">
+          <div className="mt-6 sm:mt-0 sm:ml-6 flex-shrink-0">
             <Link
               href="/raindrops"
-              className="inline-flex items-center rounded-md border border-transparent bg-white px-6 py-3 text-base font-medium text-indigo-600 shadow-sm hover:bg-indigo-50"
+              className="inline-flex items-center gap-2 rounded-lg border-2 border-indigo-600 bg-indigo-600 px-6 py-3 text-base font-semibold text-white shadow-sm hover:bg-indigo-700 hover:border-indigo-700 transition-colors"
             >
               記事を同期
+              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M13 7l5 5m0 0l-5 5m5-5H6" />
+              </svg>
             </Link>
           </div>
         </div>
