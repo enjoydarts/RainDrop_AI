@@ -148,6 +148,7 @@ export const summaries = pgTable(
     error: text("error"),
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
   },
   (table) => ({
     // ユニーク制約: user_id + raindrop_id + tone

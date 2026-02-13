@@ -6,6 +6,7 @@ import { eq, desc, isNull, and } from "drizzle-orm"
 import Image from "next/image"
 import { ImportButton } from "./import-button"
 import { SummaryButton } from "./summary-button"
+import { DeleteButton } from "./delete-button"
 
 export default async function RaindropsPage() {
   const session = await auth()
@@ -88,8 +89,9 @@ export default async function RaindropsPage() {
                           </span>
                         )}
                     </div>
-                    <div className="mt-4">
+                    <div className="mt-4 flex items-center gap-2">
                       <SummaryButton raindropId={item.id} />
+                      <DeleteButton raindropId={item.id} articleTitle={item.title} />
                     </div>
                   </div>
                   {item.cover && (

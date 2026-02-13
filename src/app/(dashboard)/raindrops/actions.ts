@@ -80,3 +80,53 @@ export async function generateSummary(raindropId: number, tone: string = "neutra
   revalidatePath("/raindrops")
   revalidatePath("/summaries")
 }
+
+export async function deleteRaindrop(raindropId: number) {
+  console.log("[deleteRaindrop] Function called for raindropId:", raindropId)
+
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    console.error("[deleteRaindrop] Unauthorized - no session")
+    throw new Error("Unauthorized")
+  }
+
+  try {
+    const { db } = await import("@/db")
+    const { raindrops, summaries } = await import("@/db/schema")
+    const { eq, and } = await import("drizzle-orm")
+
+    console.log("[deleteRaindrop] Deleting raindrop and summaries for user:", session.user.id)
+
+    // トランザクションで記事と要約を論理削除
+    await db.transaction(async (tx) => {
+      // 記事を論理削除
+      await tx
+        .update(raindrops)
+        .set({
+          deletedAt: new Date(),
+        })
+        .where(and(eq(raindrops.id, raindropId), eq(raindrops.userId, session.user.id!)))
+
+      // 紐づく要約も論理削除
+      await tx
+        .update(summaries)
+        .set({
+          deletedAt: new Date(),
+        })
+        .where(and(eq(summaries.raindropId, raindropId), eq(summaries.userId, session.user.id!)))
+    })
+
+    console.log("[deleteRaindrop] Successfully deleted raindrop:", raindropId)
+
+    // ページをリフレッシュ
+    revalidatePath("/raindrops")
+    revalidatePath("/summaries")
+    revalidatePath("/dashboard")
+
+    return { success: true }
+  } catch (error) {
+    console.error("[deleteRaindrop] Error:", error)
+    throw new Error(`削除に失敗しました: ${error instanceof Error ? error.message : String(error)}`)
+  }
+}
