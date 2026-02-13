@@ -13,10 +13,11 @@ export const anthropic = new Anthropic({
 
 /**
  * モデル定義
+ * 2026年2月時点の最新モデル
  */
 export const MODELS = {
-  HAIKU: "claude-3-5-haiku-20241022",
-  SONNET: "claude-3-5-sonnet-20241022",
+  HAIKU: "claude-haiku-4-5",
+  SONNET: "claude-sonnet-4-5",
 } as const
 
 export type ModelType = (typeof MODELS)[keyof typeof MODELS]
