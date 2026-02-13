@@ -19,15 +19,8 @@
     {
       "idx": 2,
       "version": "7",
-      "when": 1770964800000,
-      "tag": "0002_nextauth_migration",
-      "breakpoints": true
-    },
-    {
-      "idx": 3,
-      "version": "7",
       "when": 1770964900000,
-      "tag": "0003_add_summaries_deleted_at",
+      "tag": "0002_add_summaries_deleted_at",
       "breakpoints": true
     }
   ]
