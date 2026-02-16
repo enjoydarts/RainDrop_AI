@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation"
-import { db } from "@/db"
+import { withAnonymous } from "@/db/rls"
 import { summaries, raindrops } from "@/db/schema"
 import { eq, and } from "drizzle-orm"
 import Image from "next/image"
@@ -19,28 +19,30 @@ export default async function SharedSummaryPage({
 }) {
   const { id } = await params
 
-  // 公開された要約を取得
-  const [summary] = await db
-    .select({
-      id: summaries.id,
-      summary: summaries.summary,
-      tone: summaries.tone,
-      rating: summaries.rating,
-      ratingReason: summaries.ratingReason,
-      model: summaries.model,
-      createdAt: summaries.createdAt,
-      articleTitle: raindrops.title,
-      articleLink: raindrops.link,
-      articleCover: raindrops.cover,
-      articleExcerpt: raindrops.excerpt,
-    })
-    .from(summaries)
-    .innerJoin(
-      raindrops,
-      and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
-    )
-    .where(and(eq(summaries.id, id), eq(summaries.isPublic, 1)))
-    .limit(1)
+  // 公開された要約を取得（匿名アクセス、RLSで公開要約のみ取得）
+  const [summary] = await withAnonymous(async (tx) => {
+    return await tx
+      .select({
+        id: summaries.id,
+        summary: summaries.summary,
+        tone: summaries.tone,
+        rating: summaries.rating,
+        ratingReason: summaries.ratingReason,
+        model: summaries.model,
+        createdAt: summaries.createdAt,
+        articleTitle: raindrops.title,
+        articleLink: raindrops.link,
+        articleCover: raindrops.cover,
+        articleExcerpt: raindrops.excerpt,
+      })
+      .from(summaries)
+      .innerJoin(
+        raindrops,
+        and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
+      )
+      .where(and(eq(summaries.id, id), eq(summaries.isPublic, 1)))
+      .limit(1)
+  })
 
   if (!summary) {
     notFound()
@@ -177,18 +179,20 @@ export async function generateMetadata({
 }) {
   const { id } = await params
 
-  const [summary] = await db
-    .select({
-      articleTitle: raindrops.title,
-      summary: summaries.summary,
-    })
-    .from(summaries)
-    .innerJoin(
-      raindrops,
-      and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
-    )
-    .where(and(eq(summaries.id, id), eq(summaries.isPublic, 1)))
-    .limit(1)
+  const [summary] = await withAnonymous(async (tx) => {
+    return await tx
+      .select({
+        articleTitle: raindrops.title,
+        summary: summaries.summary,
+      })
+      .from(summaries)
+      .innerJoin(
+        raindrops,
+        and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
+      )
+      .where(and(eq(summaries.id, id), eq(summaries.isPublic, 1)))
+      .limit(1)
+  })
 
   if (!summary) {
     return {

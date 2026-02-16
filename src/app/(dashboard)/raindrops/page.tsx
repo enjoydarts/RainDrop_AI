@@ -1,8 +1,8 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { db } from "@/db"
+import { withRLS } from "@/db/rls"
 import { raindrops, users } from "@/db/schema"
-import { eq, desc, isNull, and, sql } from "drizzle-orm"
+import { eq, desc, isNull, and } from "drizzle-orm"
 import { ImportButton } from "./import-button"
 import { SearchableList } from "./searchable-list"
 import { getRaindropCollections, createCollectionMap } from "@/lib/raindrop-api"
@@ -16,20 +16,24 @@ export default async function RaindropsPage() {
 
   const userId = session.user.id
 
-  // 取り込み済み記事を取得
-  const items = await db
-    .select()
-    .from(raindrops)
-    .where(and(eq(raindrops.userId, userId), isNull(raindrops.deletedAt)))
-    .orderBy(desc(raindrops.syncedAt))
-    .limit(50)
+  // RLS対応: セッション変数を設定してクエリを実行
+  const { items, user } = await withRLS(userId, async (tx) => {
+    // 取り込み済み記事を取得（RLSで自動的にユーザーのデータのみ取得）
+    const items = await tx
+      .select()
+      .from(raindrops)
+      .where(isNull(raindrops.deletedAt))
+      .orderBy(desc(raindrops.syncedAt))
+      .limit(50)
 
-  // ユーザーのRaindropアクセストークンを取得
-  const [user] = await db
-    .select({ raindropAccessToken: users.raindropAccessToken })
-    .from(users)
-    .where(eq(users.id, userId))
-    .limit(1)
+    // ユーザーのRaindropアクセストークンを取得（RLSで自動フィルタリング）
+    const [user] = await tx
+      .select({ raindropAccessToken: users.raindropAccessToken })
+      .from(users)
+      .limit(1)
+
+    return { items, user }
+  })
 
   // コレクション名を取得（APIから）
   let collectionMap = new Map<number, string>()
