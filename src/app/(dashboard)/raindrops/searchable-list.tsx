@@ -19,31 +19,32 @@ interface Raindrop {
 
 interface SearchableListProps {
   items: Raindrop[]
+  collectionMap?: Map<number, string>
 }
 
-export function SearchableList({ items }: SearchableListProps) {
+export function SearchableList({ items, collectionMap = new Map() }: SearchableListProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCollection, setSelectedCollection] = useState<number | null>(null)
 
   // コレクション一覧を生成
   const collections = useMemo(() => {
-    const collectionMap = new Map<number, number>()
+    const collectionCountMap = new Map<number, number>()
 
     items.forEach((item) => {
       if (item.collectionId !== null) {
-        const count = collectionMap.get(item.collectionId) || 0
-        collectionMap.set(item.collectionId, count + 1)
+        const count = collectionCountMap.get(item.collectionId) || 0
+        collectionCountMap.set(item.collectionId, count + 1)
       }
     })
 
-    return Array.from(collectionMap.entries())
+    return Array.from(collectionCountMap.entries())
       .map(([id, count]) => ({
         id,
-        name: `Collection ${id}`,
+        name: collectionMap.get(id) || `Collection ${id}`,
         count,
       }))
       .sort((a, b) => b.count - a.count)
-  }, [items])
+  }, [items, collectionMap])
 
   // 検索・コレクションフィルタリング
   const filteredItems = useMemo(() => {

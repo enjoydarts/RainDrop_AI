@@ -1,10 +1,11 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
-import { raindrops } from "@/db/schema"
+import { raindrops, users } from "@/db/schema"
 import { eq, desc, isNull, and, sql } from "drizzle-orm"
 import { ImportButton } from "./import-button"
 import { SearchableList } from "./searchable-list"
+import { getRaindropCollections, createCollectionMap } from "@/lib/raindrop-api"
 
 export default async function RaindropsPage() {
   const session = await auth()
@@ -22,6 +23,25 @@ export default async function RaindropsPage() {
     .where(and(eq(raindrops.userId, userId), isNull(raindrops.deletedAt)))
     .orderBy(desc(raindrops.syncedAt))
     .limit(50)
+
+  // ユーザーのRaindropアクセストークンを取得
+  const [user] = await db
+    .select({ raindropAccessToken: users.raindropAccessToken })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  // コレクション名を取得（APIから）
+  let collectionMap = new Map<number, string>()
+  if (user?.raindropAccessToken) {
+    try {
+      const collections = await getRaindropCollections(user.raindropAccessToken)
+      collectionMap = createCollectionMap(collections)
+    } catch (error) {
+      console.error("[RaindropsPage] Failed to fetch collections:", error)
+      // エラーが発生してもページは表示（コレクション名なしで）
+    }
+  }
 
   return (
     <div className="px-4 sm:px-0">
@@ -48,7 +68,7 @@ export default async function RaindropsPage() {
           </div>
         </div>
       ) : (
-        <SearchableList items={items} />
+        <SearchableList items={items} collectionMap={collectionMap} />
       )}
     </div>
   )
