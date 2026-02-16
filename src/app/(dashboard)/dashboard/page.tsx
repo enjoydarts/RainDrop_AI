@@ -35,7 +35,7 @@ export default async function DashboardPage() {
         .from(apiUsage)
         .where(gte(apiUsage.createdAt, firstDayOfMonth))
 
-      // 最近の要約を取得
+      // 最近の要約を取得（記事情報も含む）
       const recentSummaries = await tx
         .select({
           id: summaries.id,
@@ -43,8 +43,11 @@ export default async function DashboardPage() {
           tone: summaries.tone,
           status: summaries.status,
           createdAt: summaries.createdAt,
+          content: summaries.content,
+          articleTitle: raindrops.title,
         })
         .from(summaries)
+        .leftJoin(raindrops, sql`${summaries.raindropId} = ${raindrops.id}`)
         .orderBy(sql`${summaries.createdAt} DESC`)
         .limit(3)
 
@@ -180,28 +183,47 @@ export default async function DashboardPage() {
               <Link
                 key={summary.id}
                 href={`/summaries/${summary.id}`}
-                className="block rounded-lg bg-white p-4 shadow transition-shadow hover:shadow-md"
+                className="block rounded-lg border border-gray-200 bg-white p-5 shadow-sm transition-all hover:shadow-md hover:border-indigo-200"
               >
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center space-x-3">
-                    <span className="inline-flex items-center rounded-full bg-indigo-100 px-3 py-0.5 text-xs font-medium capitalize text-indigo-800">
-                      {summary.tone}
-                    </span>
-                    <span className="text-sm text-gray-500" suppressHydrationWarning>
-                      {new Date(summary.createdAt).toLocaleDateString('ja-JP')}
+                <div className="space-y-3">
+                  {/* ヘッダー: タイトルとステータス */}
+                  <div className="flex items-start justify-between gap-3">
+                    <h3 className="flex-1 text-base font-semibold text-gray-900 line-clamp-2">
+                      {summary.articleTitle || '無題の記事'}
+                    </h3>
+                    <span
+                      className={`flex-shrink-0 inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
+                        summary.status === 'completed'
+                          ? 'bg-green-100 text-green-800'
+                          : summary.status === 'failed'
+                          ? 'bg-red-100 text-red-800'
+                          : 'bg-yellow-100 text-yellow-800'
+                      }`}
+                    >
+                      {summary.status}
                     </span>
                   </div>
-                  <span
-                    className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${
-                      summary.status === 'completed'
-                        ? 'bg-green-100 text-green-800'
-                        : summary.status === 'failed'
-                        ? 'bg-red-100 text-red-800'
-                        : 'bg-yellow-100 text-yellow-800'
-                    }`}
-                  >
-                    {summary.status}
-                  </span>
+
+                  {/* 要約プレビュー */}
+                  {summary.status === 'completed' && summary.content && (
+                    <p className="text-sm text-gray-600 line-clamp-2">
+                      {summary.content.substring(0, 150)}...
+                    </p>
+                  )}
+
+                  {/* メタ情報 */}
+                  <div className="flex items-center gap-3 text-xs text-gray-500">
+                    <span className="inline-flex items-center rounded-full bg-indigo-50 px-2.5 py-0.5 font-medium capitalize text-indigo-700">
+                      {summary.tone}
+                    </span>
+                    <span suppressHydrationWarning>
+                      {new Date(summary.createdAt).toLocaleDateString('ja-JP', {
+                        year: 'numeric',
+                        month: 'short',
+                        day: 'numeric'
+                      })}
+                    </span>
+                  </div>
                 </div>
               </Link>
             ))}
