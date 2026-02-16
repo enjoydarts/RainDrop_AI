@@ -15,8 +15,10 @@ const TONE_LABELS: Record<string, { label: string; icon: string }> = {
 export default async function SharedSummaryPage({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
+
   // 公開された要約を取得
   const [summary] = await db
     .select({
@@ -37,7 +39,7 @@ export default async function SharedSummaryPage({
       raindrops,
       and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
     )
-    .where(and(eq(summaries.id, params.id), eq(summaries.isPublic, 1)))
+    .where(and(eq(summaries.id, id), eq(summaries.isPublic, 1)))
     .limit(1)
 
   if (!summary) {
@@ -168,8 +170,10 @@ export default async function SharedSummaryPage({
 export async function generateMetadata({
   params,
 }: {
-  params: { id: string }
+  params: Promise<{ id: string }>
 }) {
+  const { id } = await params
+
   const [summary] = await db
     .select({
       articleTitle: raindrops.title,
@@ -180,7 +184,7 @@ export async function generateMetadata({
       raindrops,
       and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
     )
-    .where(and(eq(summaries.id, params.id), eq(summaries.isPublic, 1)))
+    .where(and(eq(summaries.id, id), eq(summaries.isPublic, 1)))
     .limit(1)
 
   if (!summary) {
