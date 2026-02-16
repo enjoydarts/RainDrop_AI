@@ -4,6 +4,12 @@ import { useState } from "react"
 import { Loader2, Check, AlertCircle } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { triggerImport } from "./actions"
 
 export function ImportButton() {
@@ -33,14 +39,23 @@ export function ImportButton() {
 
   return (
     <div className="sm:mt-0 mt-4 flex flex-col items-end gap-2">
-      <Button
-        onClick={handleImport}
-        disabled={loading}
-        className="bg-indigo-600 hover:bg-indigo-700"
-      >
-        {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {loading ? "取り込み中..." : "今すぐ取り込む"}
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              onClick={handleImport}
+              disabled={loading}
+              className="bg-indigo-600 hover:bg-indigo-700"
+            >
+              {loading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+              {loading ? "取り込み中..." : "今すぐ取り込む"}
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>Raindrop.ioから最新の記事を同期</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       {/* メッセージ表示エリア（高さ固定でレイアウトシフト防止） */}
       <div className="min-h-[40px] w-full max-w-md">

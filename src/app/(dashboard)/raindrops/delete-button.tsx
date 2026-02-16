@@ -11,6 +11,12 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { deleteRaindrop } from "./actions"
 
 interface DeleteButtonProps {
@@ -38,15 +44,24 @@ export function DeleteButton({ raindropId, articleTitle }: DeleteButtonProps) {
 
   return (
     <>
-      <Button
-        variant="outline"
-        size="sm"
-        onClick={() => setShowConfirm(true)}
-        className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
-      >
-        <Trash2 className="h-3.5 w-3.5 mr-1.5" />
-        削除
-      </Button>
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setShowConfirm(true)}
+              className="border-red-200 text-red-700 hover:bg-red-50 hover:border-red-300"
+            >
+              <Trash2 className="h-3.5 w-3.5 mr-1.5" />
+              削除
+            </Button>
+          </TooltipTrigger>
+          <TooltipContent>
+            <p>この記事を削除</p>
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
 
       <Dialog open={showConfirm} onOpenChange={setShowConfirm}>
         <DialogContent>

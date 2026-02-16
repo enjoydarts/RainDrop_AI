@@ -10,6 +10,12 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu"
 import { Alert, AlertDescription } from "@/components/ui/alert"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 import { generateSummary } from "./actions"
 
 interface SummaryButtonProps {
@@ -70,27 +76,35 @@ export function SummaryButton({ raindropId }: SummaryButtonProps) {
 
   return (
     <div>
-      <DropdownMenu>
-        <DropdownMenuTrigger asChild>
-          <Button
-            size="sm"
-            disabled={loading}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {loading ? (
-              <>
-                <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
-                生成中...
-              </>
-            ) : (
-              <>
-                <FileText className="h-3.5 w-3.5 mr-1.5" />
-                要約を生成
-                <ChevronDown className="h-3 w-3 ml-1" />
-              </>
-            )}
-          </Button>
-        </DropdownMenuTrigger>
+      <TooltipProvider>
+        <DropdownMenu>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <DropdownMenuTrigger asChild>
+                <Button
+                  size="sm"
+                  disabled={loading}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-3.5 w-3.5 mr-1.5 animate-spin" />
+                      生成中...
+                    </>
+                  ) : (
+                    <>
+                      <FileText className="h-3.5 w-3.5 mr-1.5" />
+                      要約を生成
+                      <ChevronDown className="h-3 w-3 ml-1" />
+                    </>
+                  )}
+                </Button>
+              </DropdownMenuTrigger>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>トーンを選択してAI要約を生成</p>
+            </TooltipContent>
+          </Tooltip>
         <DropdownMenuContent className="w-64">
           {TONE_OPTIONS.map((option) => (
             <DropdownMenuItem
@@ -112,7 +126,8 @@ export function SummaryButton({ raindropId }: SummaryButtonProps) {
             </DropdownMenuItem>
           ))}
         </DropdownMenuContent>
-      </DropdownMenu>
+        </DropdownMenu>
+      </TooltipProvider>
 
       {/* メッセージ表示エリア（レイアウトシフト防止） */}
       {success && (

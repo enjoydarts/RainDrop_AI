@@ -3,6 +3,12 @@
 import { useState } from "react"
 import { Copy, Check, EyeOff, Share2 } from "lucide-react"
 import { Button } from "@/components/ui/button"
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip"
 
 interface ShareButtonProps {
   summaryId: string
@@ -37,47 +43,70 @@ export function ShareButton({ summaryId, isPublic, onToggle }: ShareButtonProps)
   }
 
   return (
-    <div className="flex items-center gap-2">
-      {isPublic ? (
-        <>
-          <Button
-            size="sm"
-            onClick={handleCopyLink}
-            className="bg-green-600 hover:bg-green-700"
-          >
-            {copied ? (
-              <>
-                <Check className="h-3.5 w-3.5 mr-1.5" />
-                コピー済み
-              </>
-            ) : (
-              <>
-                <Copy className="h-3.5 w-3.5 mr-1.5" />
-                リンクをコピー
-              </>
-            )}
-          </Button>
-          <Button
-            size="sm"
-            onClick={handleTogglePublic}
-            disabled={loading}
-            className="bg-gray-600 hover:bg-gray-700"
-          >
-            <EyeOff className="h-3.5 w-3.5 mr-1.5" />
-            非公開にする
-          </Button>
-        </>
-      ) : (
-        <Button
-          size="sm"
-          onClick={handleTogglePublic}
-          disabled={loading}
-          className="bg-indigo-600 hover:bg-indigo-700"
-        >
-          <Share2 className="h-3.5 w-3.5 mr-1.5" />
-          共有する
-        </Button>
-      )}
-    </div>
+    <TooltipProvider>
+      <div className="flex items-center gap-2">
+        {isPublic ? (
+          <>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  onClick={handleCopyLink}
+                  className="bg-green-600 hover:bg-green-700"
+                >
+                  {copied ? (
+                    <>
+                      <Check className="h-3.5 w-3.5 mr-1.5" />
+                      コピー済み
+                    </>
+                  ) : (
+                    <>
+                      <Copy className="h-3.5 w-3.5 mr-1.5" />
+                      リンクをコピー
+                    </>
+                  )}
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>共有リンクをコピー</p>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="sm"
+                  onClick={handleTogglePublic}
+                  disabled={loading}
+                  className="bg-gray-600 hover:bg-gray-700"
+                >
+                  <EyeOff className="h-3.5 w-3.5 mr-1.5" />
+                  非公開にする
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>要約を非公開にする</p>
+              </TooltipContent>
+            </Tooltip>
+          </>
+        ) : (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                size="sm"
+                onClick={handleTogglePublic}
+                disabled={loading}
+                className="bg-indigo-600 hover:bg-indigo-700"
+              >
+                <Share2 className="h-3.5 w-3.5 mr-1.5" />
+                共有する
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>要約を公開して共有リンクを生成</p>
+            </TooltipContent>
+          </Tooltip>
+        )}
+      </div>
+    </TooltipProvider>
   )
 }
