@@ -4,10 +4,17 @@ import { withRLS } from "@/db/rls"
 import { raindrops, summaries, apiUsage } from "@/db/schema"
 import { count, sum, isNull, and, gte, sql } from "drizzle-orm"
 import Link from "next/link"
-import { Newspaper, FileText, DollarSign, ChevronRight, ArrowRight } from "lucide-react"
+import { Newspaper, FileText, DollarSign, ChevronRight, ArrowRight, ClipboardList, Zap, Flame, MessageCircle } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
+
+const TONE_LABELS = {
+  neutral: { label: "客観的", Icon: ClipboardList },
+  snarky: { label: "毒舌", Icon: Zap },
+  enthusiastic: { label: "熱量高め", Icon: Flame },
+  casual: { label: "カジュアル", Icon: MessageCircle },
+} as const
 
 export default async function DashboardPage() {
   const session = await auth()
@@ -64,11 +71,11 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* ウェルカムセクション */}
-      <div className="border-b border-gray-200 pb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">
+      <div className="border-b border-slate-200 pb-6">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
           ようこそ、{user.name}さん
         </h1>
-        <p className="mt-3 text-base text-gray-600">
+        <p className="mt-3 text-base text-slate-600">
           Raindrop.ioから記事を取り込んで、AI要約を生成しましょう
         </p>
       </div>
@@ -76,19 +83,19 @@ export default async function DashboardPage() {
       {/* 統計カード */}
       <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-3">
         {/* 記事数 */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="card-hover">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <dt className="text-sm font-medium text-gray-500 mb-2">保存済み記事</dt>
-                <dd className="text-4xl font-bold text-gray-900">{raindropCount.count}</dd>
+                <dt className="text-sm font-medium text-slate-500 mb-2">保存済み記事</dt>
+                <dd className="text-4xl font-bold text-slate-900">{raindropCount.count}</dd>
               </div>
-              <div className="flex-shrink-0 rounded-lg bg-indigo-50 p-3">
+              <div className="flex-shrink-0 rounded-lg bg-slate-100 p-3">
                 <Newspaper className="h-7 w-7 text-indigo-600" />
               </div>
             </div>
           </CardContent>
-          <CardFooter className="border-t border-gray-100 bg-gray-50/50 px-6 py-3">
+          <CardFooter className="border-t border-slate-100 bg-slate-50/50 px-6 py-3">
             <Link href="/raindrops" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
               記事一覧を見る
               <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -97,20 +104,20 @@ export default async function DashboardPage() {
         </Card>
 
         {/* 要約数 */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="card-hover">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <dt className="text-sm font-medium text-gray-500 mb-2">生成済み要約</dt>
-                <dd className="text-4xl font-bold text-gray-900">{summaryCount.count}</dd>
+                <dt className="text-sm font-medium text-slate-500 mb-2">生成済み要約</dt>
+                <dd className="text-4xl font-bold text-slate-900">{summaryCount.count}</dd>
               </div>
-              <div className="flex-shrink-0 rounded-lg bg-green-50 p-3">
-                <FileText className="h-7 w-7 text-green-600" />
+              <div className="flex-shrink-0 rounded-lg bg-slate-100 p-3">
+                <FileText className="h-7 w-7 text-indigo-600" />
               </div>
             </div>
           </CardContent>
-          <CardFooter className="border-t border-gray-100 bg-gray-50/50 px-6 py-3">
-            <Link href="/summaries" className="text-sm font-semibold text-green-600 hover:text-green-700 flex items-center gap-1 group">
+          <CardFooter className="border-t border-slate-100 bg-slate-50/50 px-6 py-3">
+            <Link href="/summaries" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
               要約一覧を見る
               <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
             </Link>
@@ -118,22 +125,22 @@ export default async function DashboardPage() {
         </Card>
 
         {/* 今月のコスト */}
-        <Card className="hover:shadow-md transition-shadow">
+        <Card className="card-hover">
           <CardContent className="p-6">
             <div className="flex items-center justify-between">
               <div className="flex-1">
-                <dt className="text-sm font-medium text-gray-500 mb-2">今月のAPI利用</dt>
-                <dd className="text-4xl font-bold text-gray-900" suppressHydrationWarning>
+                <dt className="text-sm font-medium text-slate-500 mb-2">今月のAPI利用</dt>
+                <dd className="text-4xl font-bold text-slate-900" suppressHydrationWarning>
                   ${totalCost.toFixed(4)}
                 </dd>
               </div>
-              <div className="flex-shrink-0 rounded-lg bg-purple-50 p-3">
-                <DollarSign className="h-7 w-7 text-purple-600" />
+              <div className="flex-shrink-0 rounded-lg bg-slate-100 p-3">
+                <DollarSign className="h-7 w-7 text-indigo-600" />
               </div>
             </div>
           </CardContent>
-          <CardFooter className="border-t border-gray-100 bg-gray-50/50 px-6 py-3">
-            <span className="text-sm text-gray-600">
+          <CardFooter className="border-t border-slate-100 bg-slate-50/50 px-6 py-3">
+            <span className="text-sm text-slate-600">
               {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' })}
             </span>
           </CardFooter>
@@ -166,67 +173,76 @@ export default async function DashboardPage() {
       {recentSummaries.length > 0 && (
         <div>
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-gray-900">最近の要約</h2>
+            <h2 className="text-xl font-semibold text-slate-900">最近の要約</h2>
             <Link href="/summaries" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
               すべて見る →
             </Link>
           </div>
           <div className="grid gap-4">
-            {recentSummaries.map((summary) => (
-              <Link key={summary.id} href={`/summaries/${summary.id}`}>
-                <Card className="transition-all hover:shadow-md hover:border-indigo-200">
-                  <CardContent className="p-6">
-                    <div className="space-y-4">
-                      {/* ヘッダー: タイトルとステータス */}
-                      <div className="flex items-start justify-between gap-3">
-                        <h3 className="flex-1 text-base font-semibold text-gray-900 line-clamp-2">
-                          {summary.articleTitle || '無題の記事'}
-                        </h3>
-                        <Badge
-                          variant={
-                            summary.status === 'completed'
-                              ? 'default'
-                              : summary.status === 'failed'
-                              ? 'destructive'
-                              : 'secondary'
-                          }
-                          className={
-                            summary.status === 'completed'
-                              ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                              : summary.status === 'processing'
-                              ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
-                              : ''
-                          }
-                        >
-                          {summary.status}
-                        </Badge>
-                      </div>
+            {recentSummaries.map((summary) => {
+              const toneInfo = TONE_LABELS[summary.tone as keyof typeof TONE_LABELS] || {
+                label: summary.tone,
+                Icon: FileText
+              }
+              const ToneIcon = toneInfo.Icon
 
-                      {/* 要約プレビュー */}
-                      {summary.status === 'completed' && summary.summary && (
-                        <p className="text-sm text-gray-600 line-clamp-2">
-                          {summary.summary.substring(0, 150)}...
-                        </p>
-                      )}
+              return (
+                <Link key={summary.id} href={`/summaries/${summary.id}`}>
+                  <Card className="card-hover">
+                    <CardContent className="p-6">
+                      <div className="space-y-4">
+                        {/* ヘッダー: タイトルとステータス */}
+                        <div className="flex items-start justify-between gap-3">
+                          <h3 className="flex-1 text-base font-semibold text-slate-900 line-clamp-2">
+                            {summary.articleTitle || '無題の記事'}
+                          </h3>
+                          <Badge
+                            variant={
+                              summary.status === 'completed'
+                                ? 'default'
+                                : summary.status === 'failed'
+                                ? 'destructive'
+                                : 'secondary'
+                            }
+                            className={
+                              summary.status === 'completed'
+                                ? 'bg-green-100 text-green-800 hover:bg-green-100'
+                                : summary.status === 'processing'
+                                ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
+                                : ''
+                            }
+                          >
+                            {summary.status}
+                          </Badge>
+                        </div>
 
-                      {/* メタ情報 */}
-                      <div className="flex items-center gap-3 text-xs text-gray-500">
-                        <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-50 capitalize">
-                          {summary.tone}
-                        </Badge>
-                        <span suppressHydrationWarning>
-                          {new Date(summary.createdAt).toLocaleDateString('ja-JP', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </span>
+                        {/* 要約プレビュー */}
+                        {summary.status === 'completed' && summary.summary && (
+                          <p className="text-sm text-slate-600 line-clamp-2">
+                            {summary.summary.substring(0, 150)}...
+                          </p>
+                        )}
+
+                        {/* メタ情報 */}
+                        <div className="flex items-center gap-3 text-xs text-slate-500">
+                          <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
+                            <ToneIcon className="h-3 w-3 mr-1" />
+                            {toneInfo.label}
+                          </Badge>
+                          <span suppressHydrationWarning>
+                            {new Date(summary.createdAt).toLocaleDateString('ja-JP', {
+                              year: 'numeric',
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </span>
+                        </div>
                       </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </Link>
-            ))}
+                    </CardContent>
+                  </Card>
+                </Link>
+              )
+            })}
           </div>
         </div>
       )}

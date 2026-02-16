@@ -49,19 +49,19 @@ export default async function SummariesPage() {
 
   return (
     <div className="px-4 sm:px-0">
-      <div className="mb-8 border-b border-gray-200 pb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-gray-900">要約一覧</h1>
-        <p className="mt-2 text-sm text-gray-600">{items.length}件の要約</p>
+      <div className="mb-8 border-b border-slate-200 pb-6">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900">要約一覧</h1>
+        <p className="mt-2 text-sm text-slate-600">{items.length}件の要約</p>
       </div>
 
       {items.length === 0 ? (
         <Card>
           <div className="px-4 py-16 text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <FileText className="h-6 w-6 text-gray-400" />
+            <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+              <FileText className="h-6 w-6 text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-gray-900 mb-2">まだ要約が生成されていません</h3>
-            <p className="text-sm text-gray-500 mb-4">記事を取り込んで、要約を生成してみましょう</p>
+            <h3 className="text-base font-semibold text-slate-900 mb-2">まだ要約が生成されていません</h3>
+            <p className="text-sm text-slate-500 mb-4">記事を取り込んで、要約を生成してみましょう</p>
             <Button asChild className="bg-indigo-600 hover:bg-indigo-700">
               <Link href="/raindrops">
                 記事を取り込む

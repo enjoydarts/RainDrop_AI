@@ -2,10 +2,11 @@
 
 import { useState, useMemo } from "react"
 import Image from "next/image"
-import { Search, X, Calendar, Tag } from "lucide-react"
+import { Search, X, Calendar, Tag, Newspaper } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
+import { Badge } from "@/components/ui/badge"
 import { SummaryButton } from "./summary-button"
 import { DeleteButton } from "./delete-button"
 import { CollectionFilter } from "./collection-filter"
@@ -105,7 +106,7 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
         {/* 検索バー */}
         <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <Search className="h-5 w-5 text-gray-400" />
+          <Search className="h-5 w-5 text-slate-400" />
         </div>
         <Input
           type="text"
@@ -121,14 +122,14 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
             onClick={() => setSearchQuery("")}
             className="absolute inset-y-0 right-0 h-full px-3 hover:bg-transparent"
           >
-            <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+            <X className="h-5 w-5 text-slate-400 hover:text-slate-600" />
           </Button>
         )}
       </div>
 
       {/* 検索結果件数 */}
       {searchQuery && (
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-slate-600">
           {filteredItems.length}件の記事が見つかりました
         </div>
       )}
@@ -137,70 +138,91 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
       {filteredItems.length === 0 ? (
         <Card>
           <div className="px-4 py-16 text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Search className="h-6 w-6 text-gray-400" />
+            <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+              <Search className="h-6 w-6 text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-gray-900 mb-2">
+            <h3 className="text-base font-semibold text-slate-900 mb-2">
               検索結果が見つかりませんでした
             </h3>
-            <p className="text-sm text-gray-500 max-w-sm mx-auto">
+            <p className="text-sm text-slate-500 max-w-sm mx-auto">
               別のキーワードで検索してみてください。
             </p>
           </div>
         </Card>
       ) : (
-        <Card>
-          <ul className="divide-y divide-gray-100">
-            {filteredItems.map((item) => (
-              <li key={item.id} className="p-5 hover:bg-gray-50/50 transition-colors">
-                <div className="flex items-start justify-between gap-4">
-                  <div className="min-w-0 flex-1">
-                    <a
-                      href={item.link}
-                      target="_blank"
-                      rel="noopener noreferrer"
-                      className="text-base font-semibold text-gray-900 hover:text-indigo-600 transition-colors line-clamp-2"
-                    >
-                      {item.title}
-                    </a>
-                    {item.excerpt && (
-                      <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-gray-600">
-                        {item.excerpt}
-                      </p>
-                    )}
-                    <div className="mt-3 flex items-center gap-3 text-xs text-gray-500">
-                      <span className="flex items-center gap-1">
-                        <Calendar className="h-3.5 w-3.5" />
-                        {new Date(item.createdAtRemote).toLocaleDateString("ja-JP")}
-                      </span>
-                      {item.tags &&
-                      Array.isArray(item.tags) &&
-                      (item.tags as unknown[]).length > 0 ? (
-                        <span className="flex items-center gap-1" suppressHydrationWarning>
-                          <Tag className="h-3.5 w-3.5" />
-                          {String((item.tags as unknown as string[]).slice(0, 3).join(", "))}
-                        </span>
-                      ) : null}
-                    </div>
-                    <div className="mt-4 flex items-center gap-2">
-                      <SummaryButton raindropId={item.id} />
-                      <DeleteButton raindropId={item.id} articleTitle={item.title} />
-                    </div>
-                  </div>
-                  {item.cover && (
+        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+          {filteredItems.map((item) => {
+            const formatDate = (date: Date) => {
+              return new Date(date).toLocaleDateString("ja-JP", {
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+              })
+            }
+
+            return (
+              <div
+                key={item.id}
+                className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm card-hover"
+              >
+                {/* カバー画像（上部・大きく） */}
+                {item.cover ? (
+                  <div className="relative aspect-[16/9] overflow-hidden bg-slate-100">
                     <Image
                       src={item.cover}
                       alt=""
-                      width={96}
-                      height={96}
-                      className="ml-4 h-24 w-24 flex-shrink-0 rounded-lg object-cover border border-gray-200"
+                      fill
+                      className="object-cover image-hover-zoom"
                     />
+                    {/* 日付バッジ（画像上） */}
+                    <div className="absolute top-3 right-3">
+                      <Badge className="bg-white/90 backdrop-blur-sm text-slate-700 hover:bg-white/90">
+                        <Calendar className="h-3 w-3 mr-1" />
+                        {formatDate(item.createdAtRemote)}
+                      </Badge>
+                    </div>
+                  </div>
+                ) : (
+                  <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                    <Newspaper className="h-12 w-12 text-slate-300" />
+                  </div>
+                )}
+
+                {/* コンテンツエリア */}
+                <div className="p-5">
+                  <h3 className="text-lg font-semibold text-slate-900 line-clamp-2 mb-2 hover:text-indigo-600 transition-colors">
+                    <a href={item.link} target="_blank" rel="noopener noreferrer">
+                      {item.title}
+                    </a>
+                  </h3>
+
+                  {item.excerpt && (
+                    <p className="text-sm text-slate-600 line-clamp-3 mb-4">
+                      {item.excerpt}
+                    </p>
                   )}
+
+                  {/* タグ */}
+                  {item.tags && Array.isArray(item.tags) && (item.tags as string[]).length > 0 && (
+                    <div className="flex flex-wrap gap-1.5 mb-4">
+                      {(item.tags as string[]).slice(0, 3).map((tag) => (
+                        <Badge key={tag} variant="secondary" className="text-xs">
+                          {tag}
+                        </Badge>
+                      ))}
+                    </div>
+                  )}
+
+                  {/* アクションボタン */}
+                  <div className="flex items-center gap-2">
+                    <SummaryButton raindropId={item.id} />
+                    <DeleteButton raindropId={item.id} articleTitle={item.title} />
+                  </div>
                 </div>
-              </li>
-            ))}
-          </ul>
-        </Card>
+              </div>
+            )
+          })}
+        </div>
       )}
       </div>
     </div>

@@ -51,10 +51,10 @@ export default async function RaindropsPage() {
 
   return (
     <div className="px-4 sm:px-0">
-      <div className="mb-8 sm:flex sm:items-center sm:justify-between border-b border-gray-200 pb-6">
+      <div className="mb-8 sm:flex sm:items-center sm:justify-between border-b border-slate-200 pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-gray-900">記事一覧</h1>
-          <p className="mt-2 text-sm text-gray-600">{items.length}件の記事</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900">記事一覧</h1>
+          <p className="mt-2 text-sm text-slate-600">{items.length}件の記事</p>
         </div>
         <ImportButton />
       </div>
@@ -62,11 +62,11 @@ export default async function RaindropsPage() {
       {items.length === 0 ? (
         <Card>
           <div className="px-4 py-16 text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Newspaper className="h-6 w-6 text-gray-400" />
+            <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+              <Newspaper className="h-6 w-6 text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-gray-900 mb-2">まだ記事が取り込まれていません</h3>
-            <p className="text-sm text-gray-500 max-w-sm mx-auto">
+            <h3 className="text-base font-semibold text-slate-900 mb-2">まだ記事が取り込まれていません</h3>
+            <p className="text-sm text-slate-500 max-w-sm mx-auto">
               「今すぐ取り込む」ボタンをクリックして、Raindrop.ioから記事を取り込んでください。
             </p>
           </div>

@@ -8,7 +8,7 @@ export default function TermsPage() {
   const lastUpdated = "2026年2月16日"
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
+    <div className="min-h-screen bg-slate-50 py-12">
       <div className="mx-auto max-w-4xl px-4 sm:px-6 lg:px-8">
         <Button variant="ghost" size="sm" asChild className="mb-6">
           <Link href="/dashboard">
@@ -25,7 +25,7 @@ export default function TermsPage() {
           <CardContent className="space-y-8">
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第1条（適用）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   本規約は、Raindary（以下「本サービス」）の提供者（以下「当方」）とユーザーとの間の、本サービスの利用に関する一切の関係に適用されます。
                 </li>
@@ -42,7 +42,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第2条（サービスの内容）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   本サービスは、Raindrop.ioに保存されたブックマーク記事を自動取り込みし、Anthropic Claude APIを用いてAI要約を生成する機能を提供します。
                 </li>
@@ -67,7 +67,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第3条（アカウント）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   ユーザーは、Raindrop.io OAuthを使用して本サービスにログインする必要があります。
                 </li>
@@ -87,10 +87,10 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第4条（禁止事項）</h2>
-              <p className="text-gray-600 mb-3">
+              <p className="text-slate-600 mb-3">
                 ユーザーは、本サービスの利用にあたり、以下の行為を行ってはなりません。
               </p>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>法令または公序良俗に違反する行為</li>
                 <li>犯罪行為に関連する行為、または犯罪を助長・促進する行為</li>
                 <li>当方または第三者の知的財産権、肖像権、プライバシー権、名誉その他の権利または利益を侵害する行為</li>
@@ -110,7 +110,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第5条（要約の公開機能）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   ユーザーは、生成した要約を公開URLで外部に共有できます。公開設定は要約ごとに個別に設定できます。
                 </li>
@@ -133,7 +133,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第6条（AI生成コンテンツの利用）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   本サービスは、Anthropic Claude APIを使用してAI要約を生成します。
                 </li>
@@ -153,7 +153,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第7条（外部サービスの利用）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   本サービスは、以下の外部サービスを利用します：
                   <ul className="list-disc space-y-1 pl-6 mt-2">
@@ -178,7 +178,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第8条（サービスの停止・変更・終了）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   当方は、以下の場合、事前の通知なく本サービスの全部または一部の提供を停止または中断することができます：
                   <ul className="list-disc space-y-1 pl-6 mt-2">
@@ -204,7 +204,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第9条（免責事項）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   本サービスは、AI生成による要約を提供するものであり、その正確性、完全性、有用性、安全性を保証するものではありません。
                 </li>
@@ -227,7 +227,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第10条（知的財産権）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   本サービスのソースコードは、MITライセンスの下で公開されています。
                 </li>
@@ -244,7 +244,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第11条（規約の変更）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   当方は、必要に応じて本規約を変更することができます。
                 </li>
@@ -264,7 +264,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第12条（準拠法・管轄）</h2>
-              <ol className="list-decimal space-y-2 pl-6 text-gray-600">
+              <ol className="list-decimal space-y-2 pl-6 text-slate-600">
                 <li>
                   本規約の解釈にあたっては、日本法を準拠法とします。
                 </li>
@@ -278,7 +278,7 @@ export default function TermsPage() {
 
             <section>
               <h2 className="mb-3 text-2xl font-semibold">第13条（お問い合わせ）</h2>
-              <p className="text-gray-600">
+              <p className="text-slate-600">
                 本規約に関するご質問や、本サービスに関するお問い合わせは、GitHubリポジトリのIssueからお問い合わせください。
               </p>
             </section>

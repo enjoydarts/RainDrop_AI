@@ -11,14 +11,14 @@ export default async function LoginPage({ searchParams }: Props) {
   const error = params.error
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
+    <div className="flex min-h-screen items-center justify-center bg-slate-50">
       <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-10 shadow-lg">
         <div className="text-center">
           <div className="mb-4 flex justify-center">
             <Image src="/logo.png" alt="Raindary" width={80} height={80} />
           </div>
-          <h1 className="mb-2 text-4xl font-bold text-gray-900">Raindary</h1>
-          <p className="text-gray-600">自分語り要約ツール</p>
+          <h1 className="mb-2 text-4xl font-bold text-slate-900">Raindary</h1>
+          <p className="text-slate-600">自分語り要約ツール</p>
         </div>
 
         {error && (
@@ -55,7 +55,7 @@ export default async function LoginPage({ searchParams }: Props) {
             </button>
           </form>
 
-          <div className="text-center text-xs text-gray-500">
+          <div className="text-center text-xs text-slate-500">
             <p>
               ログインすると、Raindrop.ioの記事を自動で取り込み、
               <br />

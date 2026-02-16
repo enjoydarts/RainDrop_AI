@@ -22,7 +22,7 @@ export default async function DashboardLayout({
   const user = session.user
 
   return (
-    <div className="flex min-h-screen flex-col bg-gray-50">
+    <div className="flex min-h-screen flex-col bg-slate-50">
       {/* ナビゲーションバー */}
       <nav className="bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
@@ -37,28 +37,28 @@ export default async function DashboardLayout({
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   ダッシュボード
                 </Link>
                 <Link
                   href="/raindrops"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
                 >
                   <Newspaper className="h-4 w-4" />
                   記事一覧
                 </Link>
                 <Link
                   href="/summaries"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
                 >
                   <FileText className="h-4 w-4" />
                   要約一覧
                 </Link>
                 <Link
                   href="/stats"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-gray-500 hover:border-gray-300 hover:text-gray-700"
+                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
                 >
                   <BarChart3 className="h-4 w-4" />
                   統計
@@ -66,7 +66,7 @@ export default async function DashboardLayout({
               </div>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-sm text-gray-700">
+              <span className="text-sm text-slate-700">
                 {user.name || user.email}
               </span>
               <form
@@ -80,7 +80,7 @@ export default async function DashboardLayout({
                   type="submit"
                   variant="ghost"
                   size="sm"
-                  className="text-gray-500 hover:text-gray-700"
+                  className="text-slate-500 hover:text-slate-700"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   ログアウト

@@ -1,7 +1,8 @@
 "use client"
 
 import { useState } from "react"
-import { FileText, ChevronDown, Loader2, Check, AlertCircle } from "lucide-react"
+import { FileText, ChevronDown, Loader2, Check, AlertCircle, ClipboardList, Zap, Flame, MessageCircle } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import {
   DropdownMenu,
@@ -24,29 +25,29 @@ interface SummaryButtonProps {
 
 type Tone = "snarky" | "neutral" | "enthusiastic" | "casual"
 
-const TONE_OPTIONS: { value: Tone; label: string; icon: string; description: string }[] = [
+const TONE_OPTIONS: { value: Tone; label: string; Icon: LucideIcon; description: string }[] = [
   {
     value: "neutral",
     label: "客観的",
-    icon: "📋",
+    Icon: ClipboardList,
     description: "事実ベースで淡々と説明",
   },
   {
     value: "snarky",
-    label: "毒舌エンジニア風",
-    icon: "😎",
+    label: "毒舌",
+    Icon: Zap,
     description: "皮肉・ツッコミを交えた本質的解説",
   },
   {
     value: "enthusiastic",
     label: "熱量高め",
-    icon: "🔥",
+    Icon: Flame,
     description: "ポジティブで前向きな表現",
   },
   {
     value: "casual",
     label: "カジュアル",
-    icon: "💬",
+    Icon: MessageCircle,
     description: "会話調でリラックスした雰囲気",
   },
 ]
@@ -106,25 +107,28 @@ export function SummaryButton({ raindropId }: SummaryButtonProps) {
             </TooltipContent>
           </Tooltip>
         <DropdownMenuContent className="w-64">
-          {TONE_OPTIONS.map((option) => (
-            <DropdownMenuItem
-              key={option.value}
-              onClick={() => handleGenerate(option.value)}
-              className="cursor-pointer"
-            >
-              <div className="flex items-start gap-2">
-                <span className="text-lg">{option.icon}</span>
-                <div className="flex-1 min-w-0">
-                  <div className="text-sm font-medium text-gray-900">
-                    {option.label}
-                  </div>
-                  <div className="text-xs text-gray-500 mt-0.5">
-                    {option.description}
+          {TONE_OPTIONS.map((option) => {
+            const OptionIcon = option.Icon
+            return (
+              <DropdownMenuItem
+                key={option.value}
+                onClick={() => handleGenerate(option.value)}
+                className="cursor-pointer"
+              >
+                <div className="flex items-start gap-2">
+                  <OptionIcon className="h-4 w-4 flex-shrink-0 mt-0.5 text-indigo-600" />
+                  <div className="flex-1 min-w-0">
+                    <div className="text-sm font-medium text-slate-900">
+                      {option.label}
+                    </div>
+                    <div className="text-xs text-slate-500 mt-0.5">
+                      {option.description}
+                    </div>
                   </div>
                 </div>
-              </div>
-            </DropdownMenuItem>
-          ))}
+              </DropdownMenuItem>
+            )
+          })}
         </DropdownMenuContent>
         </DropdownMenu>
       </TooltipProvider>

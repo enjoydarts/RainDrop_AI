@@ -4,13 +4,14 @@ import { summaries, raindrops } from "@/db/schema"
 import { eq, and } from "drizzle-orm"
 import Image from "next/image"
 import Link from "next/link"
+import { ClipboardList, Zap, Flame, MessageCircle, FileText } from "lucide-react"
 
-const TONE_LABELS: Record<string, { label: string; icon: string }> = {
-  neutral: { label: "客観的", icon: "📋" },
-  snarky: { label: "毒舌", icon: "😎" },
-  enthusiastic: { label: "熱量高め", icon: "🔥" },
-  casual: { label: "カジュアル", icon: "💬" },
-}
+const TONE_LABELS = {
+  neutral: { label: "客観的", Icon: ClipboardList },
+  snarky: { label: "毒舌", Icon: Zap },
+  enthusiastic: { label: "熱量高め", Icon: Flame },
+  casual: { label: "カジュアル", Icon: MessageCircle },
+} as const
 
 export default async function SharedSummaryPage({
   params,
@@ -48,10 +49,14 @@ export default async function SharedSummaryPage({
     notFound()
   }
 
-  const toneInfo = TONE_LABELS[summary.tone] || { label: summary.tone, icon: "📝" }
+  const toneInfo = TONE_LABELS[summary.tone as keyof typeof TONE_LABELS] || {
+    label: summary.tone,
+    Icon: FileText
+  }
+  const ToneIcon = toneInfo.Icon
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-slate-50">
       {/* ヘッダー */}
       <header className="bg-white shadow-sm">
         <div className="mx-auto max-w-4xl px-4 py-6 sm:px-6 lg:px-8">
@@ -62,7 +67,7 @@ export default async function SharedSummaryPage({
             </div>
             <Link
               href="/"
-              className="text-sm text-gray-600 hover:text-gray-900"
+              className="text-sm text-slate-600 hover:text-slate-900"
             >
               自分も使ってみる →
             </Link>
@@ -72,10 +77,10 @@ export default async function SharedSummaryPage({
 
       {/* メインコンテンツ */}
       <main className="mx-auto max-w-4xl px-4 py-8 sm:px-6 lg:px-8">
-        <article className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        <article className="rounded-xl border border-slate-200 bg-white shadow-sm overflow-hidden">
           {/* カバー画像 */}
           {summary.articleCover && (
-            <div className="relative aspect-[21/9] overflow-hidden bg-gray-100">
+            <div className="relative aspect-[21/9] overflow-hidden bg-slate-100">
               <Image
                 src={summary.articleCover}
                 alt=""
@@ -87,14 +92,14 @@ export default async function SharedSummaryPage({
 
           <div className="p-8">
             {/* 記事タイトル */}
-            <h1 className="text-3xl font-bold text-gray-900 mb-4">
+            <h1 className="text-3xl font-bold text-slate-900 mb-4">
               {summary.articleTitle}
             </h1>
 
             {/* メタ情報 */}
-            <div className="flex flex-wrap items-center gap-4 mb-6 pb-6 border-b border-gray-200">
+            <div className="flex flex-wrap items-center gap-4 mb-6 pb-6 border-b border-slate-200">
               <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-sm font-semibold text-indigo-700">
-                <span>{toneInfo.icon}</span>
+                <ToneIcon className="h-3.5 w-3.5" />
                 {toneInfo.label}
               </span>
               {summary.rating && (
@@ -102,7 +107,7 @@ export default async function SharedSummaryPage({
                   {"★".repeat(summary.rating)}{"☆".repeat(5 - summary.rating)}
                 </span>
               )}
-              <span className="text-sm text-gray-500">
+              <span className="text-sm text-slate-500">
                 {new Date(summary.createdAt).toLocaleDateString("ja-JP", {
                   year: "numeric",
                   month: "long",
@@ -113,25 +118,25 @@ export default async function SharedSummaryPage({
 
             {/* 要約 */}
             <div className="prose prose-lg max-w-none">
-              <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">
+              <p className="text-slate-800 leading-relaxed whitespace-pre-wrap">
                 {summary.summary}
               </p>
             </div>
 
             {/* 評価理由 */}
             {summary.ratingReason && (
-              <div className="mt-6 rounded-lg bg-gray-50 border border-gray-200 p-4">
-                <h3 className="text-sm font-semibold text-gray-900 mb-2">
+              <div className="mt-6 rounded-lg bg-slate-50 border border-slate-200 p-4">
+                <h3 className="text-sm font-semibold text-slate-900 mb-2">
                   評価理由
                 </h3>
-                <p className="text-sm text-gray-700 leading-relaxed">
+                <p className="text-sm text-slate-700 leading-relaxed">
                   {summary.ratingReason}
                 </p>
               </div>
             )}
 
             {/* 元記事へのリンク */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
+            <div className="mt-8 pt-6 border-t border-slate-200">
               <a
                 href={summary.articleLink}
                 target="_blank"
@@ -156,8 +161,8 @@ export default async function SharedSummaryPage({
             </div>
 
             {/* フッター */}
-            <div className="mt-8 pt-6 border-t border-gray-200">
-              <p className="text-xs text-gray-500">
+            <div className="mt-8 pt-6 border-t border-slate-200">
+              <p className="text-xs text-slate-500">
                 この要約は{" "}
                 <Link href="/" className="text-indigo-600 hover:text-indigo-700">
                   Raindary

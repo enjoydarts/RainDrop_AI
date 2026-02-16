@@ -3,7 +3,8 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, X, Check, Loader2, FileText } from "lucide-react"
+import { Search, X, Check, Loader2, FileText, ClipboardList, Zap, Flame, MessageCircle } from "lucide-react"
+import type { LucideIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
@@ -12,11 +13,11 @@ import { ShareButton } from "./share-button"
 import { togglePublic } from "./actions"
 import { useRouter } from "next/navigation"
 
-const TONE_LABELS: Record<string, { label: string; icon: string }> = {
-  neutral: { label: "客観的", icon: "📋" },
-  snarky: { label: "毒舌", icon: "😎" },
-  enthusiastic: { label: "熱量高め", icon: "🔥" },
-  casual: { label: "カジュアル", icon: "💬" },
+const TONE_LABELS: Record<string, { label: string; Icon: LucideIcon }> = {
+  neutral: { label: "客観的", Icon: ClipboardList },
+  snarky: { label: "毒舌", Icon: Zap },
+  enthusiastic: { label: "熱量高め", Icon: Flame },
+  casual: { label: "カジュアル", Icon: MessageCircle },
 }
 
 interface Summary {
@@ -87,7 +88,7 @@ export function SearchableList({ items }: SearchableListProps) {
       {/* 検索バー */}
       <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
-          <Search className="h-5 w-5 text-gray-400" />
+          <Search className="h-5 w-5 text-slate-400" />
         </div>
         <Input
           type="text"
@@ -103,14 +104,14 @@ export function SearchableList({ items }: SearchableListProps) {
             onClick={() => setSearchQuery("")}
             className="absolute inset-y-0 right-0 h-full px-3 hover:bg-transparent"
           >
-            <X className="h-5 w-5 text-gray-400 hover:text-gray-600" />
+            <X className="h-5 w-5 text-slate-400 hover:text-slate-600" />
           </Button>
         )}
       </div>
 
       {/* 検索結果件数 */}
       {searchQuery && (
-        <div className="text-sm text-gray-600">
+        <div className="text-sm text-slate-600">
           {filteredItems.length}件の要約が見つかりました
         </div>
       )}
@@ -119,13 +120,13 @@ export function SearchableList({ items }: SearchableListProps) {
       {filteredItems.length === 0 ? (
         <Card>
           <div className="px-4 py-16 text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-gray-100 flex items-center justify-center mb-4">
-              <Search className="h-6 w-6 text-gray-400" />
+            <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+              <Search className="h-6 w-6 text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-gray-900 mb-2">
+            <h3 className="text-base font-semibold text-slate-900 mb-2">
               検索結果が見つかりませんでした
             </h3>
-            <p className="text-sm text-gray-500 max-w-sm mx-auto">
+            <p className="text-sm text-slate-500 max-w-sm mx-auto">
               別のキーワードで検索してみてください。
             </p>
           </div>
@@ -135,22 +136,25 @@ export function SearchableList({ items }: SearchableListProps) {
           {filteredItems.map((item) => (
             <div
               key={item.id}
-              className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-gray-300"
+              className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm card-hover"
             >
               {/* カバー画像 */}
               {item.articleCover ? (
-                <div className="relative aspect-[16/9] overflow-hidden bg-gray-100">
+                <div className="relative aspect-[16/9] overflow-hidden bg-slate-100">
                   <Image
                     src={item.articleCover}
                     alt=""
                     fill
-                    className="object-cover transition-transform group-hover:scale-105"
+                    className="object-cover image-hover-zoom"
                   />
                   {/* バッジ */}
                   <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
                     {/* トーンバッジ */}
                     <Badge className="bg-indigo-600/90 backdrop-blur-sm hover:bg-indigo-600/90">
-                      <span className="mr-1">{TONE_LABELS[item.tone]?.icon || "📝"}</span>
+                      {(() => {
+                        const ToneIcon = TONE_LABELS[item.tone]?.Icon || FileText
+                        return <ToneIcon className="h-3 w-3 mr-1" />
+                      })()}
                       {TONE_LABELS[item.tone]?.label || item.tone}
                     </Badge>
 
@@ -178,13 +182,16 @@ export function SearchableList({ items }: SearchableListProps) {
                   </div>
                 </div>
               ) : (
-                <div className="relative aspect-[16/9] bg-gradient-to-br from-gray-50 to-gray-100 flex items-center justify-center">
-                  <FileText className="h-12 w-12 text-gray-300" />
+                <div className="relative aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                  <FileText className="h-12 w-12 text-slate-300" />
                   {/* バッジ */}
                   <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
                     {/* トーンバッジ */}
                     <Badge className="bg-indigo-600 hover:bg-indigo-600">
-                      <span className="mr-1">{TONE_LABELS[item.tone]?.icon || "📝"}</span>
+                      {(() => {
+                        const ToneIcon = TONE_LABELS[item.tone]?.Icon || FileText
+                        return <ToneIcon className="h-3 w-3 mr-1" />
+                      })()}
                       {TONE_LABELS[item.tone]?.label || item.tone}
                     </Badge>
 
@@ -217,14 +224,14 @@ export function SearchableList({ items }: SearchableListProps) {
               <div className="p-5">
                 {/* 記事タイトル */}
                 <Link href={`/summaries/${item.id}`}>
-                  <h3 className="text-base font-bold text-gray-900 line-clamp-2 mb-2 hover:text-indigo-600 transition-colors cursor-pointer">
+                  <h3 className="text-base font-bold text-slate-900 line-clamp-2 mb-2 hover:text-indigo-600 transition-colors cursor-pointer">
                     {item.articleTitle}
                   </h3>
                 </Link>
 
                 {/* 要約プレビュー */}
                 {item.status === "completed" && item.summary && (
-                  <p className="text-sm text-gray-600 line-clamp-3 mb-3">{item.summary}</p>
+                  <p className="text-sm text-slate-600 line-clamp-3 mb-3">{item.summary}</p>
                 )}
 
                 {/* エラーメッセージ */}
@@ -235,7 +242,7 @@ export function SearchableList({ items }: SearchableListProps) {
                 )}
 
                 {/* メタ情報 */}
-                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
+                <div className="flex items-center justify-between text-xs text-slate-500 mb-3">
                   <span>{new Date(item.createdAt).toLocaleDateString("ja-JP")}</span>
                   {item.rating && (
                     <span className="flex items-center gap-0.5">

@@ -26,7 +26,7 @@ export function CollectionFilter({ collections, onFilterChange }: CollectionFilt
 
   return (
     <Card className="p-4">
-      <h3 className="text-sm font-semibold text-gray-900 mb-3 flex items-center gap-2">
+      <h3 className="text-sm font-semibold text-slate-900 mb-3 flex items-center gap-2">
         <Folder className="h-4 w-4" />
         コレクション
       </h3>
@@ -38,7 +38,7 @@ export function CollectionFilter({ collections, onFilterChange }: CollectionFilt
           className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
             selectedCollection === null
               ? "bg-indigo-50 text-indigo-700 font-medium"
-              : "text-gray-700 hover:bg-gray-50"
+              : "text-slate-700 hover:bg-slate-50"
           }`}
         >
           <span className="flex items-center gap-2">
@@ -50,7 +50,7 @@ export function CollectionFilter({ collections, onFilterChange }: CollectionFilt
             className={
               selectedCollection === null
                 ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-100"
-                : "bg-gray-100 text-gray-600 hover:bg-gray-100"
+                : "bg-slate-100 text-slate-600 hover:bg-slate-100"
             }
           >
             {collections.reduce((sum, c) => sum + c.count, 0)}
@@ -65,7 +65,7 @@ export function CollectionFilter({ collections, onFilterChange }: CollectionFilt
             className={`w-full flex items-center justify-between rounded-lg px-3 py-2 text-sm transition-colors ${
               selectedCollection === collection.id
                 ? "bg-indigo-50 text-indigo-700 font-medium"
-                : "text-gray-700 hover:bg-gray-50"
+                : "text-slate-700 hover:bg-slate-50"
             }`}
           >
             <span className="flex items-center gap-2 truncate">
@@ -77,7 +77,7 @@ export function CollectionFilter({ collections, onFilterChange }: CollectionFilt
               className={`flex-shrink-0 ${
                 selectedCollection === collection.id
                   ? "bg-indigo-100 text-indigo-700 hover:bg-indigo-100"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-100"
+                  : "bg-slate-100 text-slate-600 hover:bg-slate-100"
               }`}
             >
               {collection.count}

@@ -57,3 +57,19 @@
     @apply bg-background text-foreground;
   }
 }
+
+@layer utilities {
+  .card-hover {
+    @apply transition-all duration-200 ease-out;
+    @apply hover:shadow-lg hover:shadow-slate-200/50;
+    @apply hover:border-slate-300;
+    @apply hover:-translate-y-0.5;
+  }
+
+  .image-hover-zoom {
+    @apply transition-transform duration-300 ease-out;
+  }
+  .image-hover-zoom:hover {
+    @apply scale-105;
+  }
+}

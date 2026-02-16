@@ -77,7 +77,7 @@ export function ShareButton({ summaryId, isPublic, onToggle }: ShareButtonProps)
                   size="sm"
                   onClick={handleTogglePublic}
                   disabled={loading}
-                  className="bg-gray-600 hover:bg-gray-700"
+                  className="bg-slate-600 hover:bg-slate-700"
                 >
                   <EyeOff className="h-3.5 w-3.5 mr-1.5" />
                   非公開にする
