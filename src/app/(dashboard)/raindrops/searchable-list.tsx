@@ -203,7 +203,7 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
                   )}
 
                   {/* タグ */}
-                  {item.tags && Array.isArray(item.tags) && (item.tags as string[]).length > 0 && (
+                  {item.tags && Array.isArray(item.tags) && (item.tags as string[]).length > 0 ? (
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {(item.tags as string[]).slice(0, 3).map((tag) => (
                         <Badge key={tag} variant="secondary" className="text-xs">
@@ -211,7 +211,7 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
                         </Badge>
                       ))}
                     </div>
-                  )}
+                  ) : null}
 
                   {/* アクションボタン */}
                   <div className="flex items-center gap-2">
