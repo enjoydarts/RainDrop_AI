@@ -1,5 +1,6 @@
 import { signIn } from "@/auth"
 import { redirect } from "next/navigation"
+import Image from "next/image"
 
 type Props = {
   searchParams: Promise<{ [key: string]: string | string[] | undefined }>
@@ -13,6 +14,9 @@ export default async function LoginPage({ searchParams }: Props) {
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100">
       <div className="w-full max-w-md space-y-8 rounded-xl bg-white p-10 shadow-lg">
         <div className="text-center">
+          <div className="mb-4 flex justify-center">
+            <Image src="/logo.png" alt="Raindary" width={80} height={80} />
+          </div>
           <h1 className="mb-2 text-4xl font-bold text-gray-900">Raindary</h1>
           <p className="text-gray-600">自分語り要約ツール</p>
         </div>

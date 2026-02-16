@@ -71,3 +71,6 @@ env/
 # Backup files
 *.bak
 *.[...nextauth].bak/
+
+# Logo drafts
+logp.png

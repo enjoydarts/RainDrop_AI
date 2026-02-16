@@ -1,6 +1,7 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
+import Image from "next/image"
 
 export default async function DashboardLayout({
   children,
@@ -25,8 +26,9 @@ export default async function DashboardLayout({
           <div className="flex h-16 justify-between">
             <div className="flex">
               <div className="flex flex-shrink-0 items-center">
-                <Link href="/dashboard" className="text-xl font-bold text-indigo-600">
-                  Raindary
+                <Link href="/dashboard" className="flex items-center gap-2">
+                  <Image src="/logo.png" alt="Raindary" width={32} height={32} />
+                  <span className="text-xl font-bold text-indigo-600">Raindary</span>
                 </Link>
               </div>
               <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
