@@ -1,7 +1,11 @@
 import type { Config } from "drizzle-kit"
 
-if (!process.env.DATABASE_URL) {
-  throw new Error("DATABASE_URL environment variable is not set")
+// ビルド時はTRANSACTION_POOLER（IPv4対応）を優先使用
+// ランタイムはDATABASE_URL（Direct connection、RLS対応）を使用
+const dbUrl = process.env.DATABASE_URL_POOLER || process.env.DATABASE_URL
+
+if (!dbUrl) {
+  throw new Error("DATABASE_URL or DATABASE_URL_POOLER environment variable is not set")
 }
 
 export default {
@@ -9,7 +13,7 @@ export default {
   out: "./src/db/migrations",
   dialect: "postgresql",
   dbCredentials: {
-    url: process.env.DATABASE_URL,
+    url: dbUrl,
   },
   verbose: true,
   strict: true,
