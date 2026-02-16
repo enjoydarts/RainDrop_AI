@@ -3,6 +3,9 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
+import { ShareButton } from "./share-button"
+import { togglePublic } from "./actions"
+import { useRouter } from "next/navigation"
 
 const TONE_LABELS: Record<string, { label: string; icon: string }> = {
   neutral: { label: "客観的", icon: "📋" },
@@ -19,6 +22,7 @@ interface Summary {
   rating: number | null
   ratingReason: string | null
   error: string | null
+  isPublic: number
   createdAt: Date
   raindropId: number
   articleTitle: string | null
@@ -32,7 +36,13 @@ interface SearchableListProps {
 }
 
 export function SearchableList({ items }: SearchableListProps) {
+  const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
+
+  const handleTogglePublic = async (summaryId: string) => {
+    await togglePublic(summaryId)
+    router.refresh()
+  }
 
   // 検索フィルタリング
   const filteredItems = useMemo(() => {
@@ -147,9 +157,8 @@ export function SearchableList({ items }: SearchableListProps) {
       ) : (
         <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
           {filteredItems.map((item) => (
-            <Link
+            <div
               key={item.id}
-              href={`/summaries/${item.id}`}
               className="group overflow-hidden rounded-xl border border-gray-200 bg-white shadow-sm transition-all hover:shadow-md hover:border-gray-300"
             >
               {/* カバー画像 */}
@@ -319,9 +328,11 @@ export function SearchableList({ items }: SearchableListProps) {
               {/* コンテンツ */}
               <div className="p-5">
                 {/* 記事タイトル */}
-                <h3 className="text-base font-bold text-gray-900 line-clamp-2 mb-2 group-hover:text-indigo-600 transition-colors">
-                  {item.articleTitle}
-                </h3>
+                <Link href={`/share/${item.id}`} target="_blank">
+                  <h3 className="text-base font-bold text-gray-900 line-clamp-2 mb-2 hover:text-indigo-600 transition-colors cursor-pointer">
+                    {item.articleTitle}
+                  </h3>
+                </Link>
 
                 {/* 要約プレビュー */}
                 {item.status === "completed" && item.summary && (
@@ -336,7 +347,7 @@ export function SearchableList({ items }: SearchableListProps) {
                 )}
 
                 {/* メタ情報 */}
-                <div className="flex items-center justify-between text-xs text-gray-500">
+                <div className="flex items-center justify-between text-xs text-gray-500 mb-3">
                   <span>{new Date(item.createdAt).toLocaleDateString("ja-JP")}</span>
                   {item.rating && (
                     <span className="flex items-center gap-0.5">
@@ -345,8 +356,17 @@ export function SearchableList({ items }: SearchableListProps) {
                     </span>
                   )}
                 </div>
+
+                {/* 共有ボタン */}
+                {item.status === "completed" && (
+                  <ShareButton
+                    summaryId={item.id}
+                    isPublic={item.isPublic === 1}
+                    onToggle={() => handleTogglePublic(item.id)}
+                  />
+                )}
               </div>
-            </Link>
+            </div>
           ))}
         </div>
       )}

@@ -146,6 +146,7 @@ export const summaries = pgTable(
     model: text("model").notNull(), // 使用モデル
     status: text("status").notNull().default("pending"), // 'pending', 'processing', 'completed', 'failed'
     error: text("error"),
+    isPublic: integer("is_public").default(0).notNull(), // 0: 非公開, 1: 公開
     createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
     deletedAt: timestamp("deleted_at", { withTimezone: true }),

@@ -25,6 +25,7 @@ export default async function SummariesPage() {
       rating: summaries.rating,
       ratingReason: summaries.ratingReason,
       error: summaries.error,
+      isPublic: summaries.isPublic,
       createdAt: summaries.createdAt,
       raindropId: summaries.raindropId,
       // 記事情報
