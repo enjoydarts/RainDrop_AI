@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect, notFound } from "next/navigation"
-import { db } from "@/db"
+import { withRLS } from "@/db/rls"
 import { summaries, raindrops } from "@/db/schema"
 import { eq, and } from "drizzle-orm"
 import Image from "next/image"
@@ -27,29 +27,31 @@ export default async function SummaryDetailPage({
   const userId = session.user.id
   const { id } = await params
 
-  // 自分の要約を取得
-  const [summary] = await db
-    .select({
-      id: summaries.id,
-      summary: summaries.summary,
-      tone: summaries.tone,
-      rating: summaries.rating,
-      ratingReason: summaries.ratingReason,
-      model: summaries.model,
-      isPublic: summaries.isPublic,
-      createdAt: summaries.createdAt,
-      articleTitle: raindrops.title,
-      articleLink: raindrops.link,
-      articleCover: raindrops.cover,
-      articleExcerpt: raindrops.excerpt,
-    })
-    .from(summaries)
-    .innerJoin(
-      raindrops,
-      and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
-    )
-    .where(and(eq(summaries.id, id), eq(summaries.userId, userId)))
-    .limit(1)
+  // RLS対応: 自分の要約を取得
+  const [summary] = await withRLS(userId, async (tx) => {
+    return await tx
+      .select({
+        id: summaries.id,
+        summary: summaries.summary,
+        tone: summaries.tone,
+        rating: summaries.rating,
+        ratingReason: summaries.ratingReason,
+        model: summaries.model,
+        isPublic: summaries.isPublic,
+        createdAt: summaries.createdAt,
+        articleTitle: raindrops.title,
+        articleLink: raindrops.link,
+        articleCover: raindrops.cover,
+        articleExcerpt: raindrops.excerpt,
+      })
+      .from(summaries)
+      .innerJoin(
+        raindrops,
+        and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
+      )
+      .where(eq(summaries.id, id))
+      .limit(1)
+  })
 
   if (!summary) {
     notFound()

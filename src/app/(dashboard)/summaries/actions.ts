@@ -1,9 +1,9 @@
 "use server"
 
 import { auth } from "@/auth"
-import { db } from "@/db"
+import { withRLS } from "@/db/rls"
 import { summaries } from "@/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
 
 export async function togglePublic(summaryId: string) {
@@ -15,29 +15,34 @@ export async function togglePublic(summaryId: string) {
 
   const userId = session.user.id
 
-  // 現在の公開状態を取得
-  const [summary] = await db
-    .select({ isPublic: summaries.isPublic })
-    .from(summaries)
-    .where(and(eq(summaries.id, summaryId), eq(summaries.userId, userId)))
-    .limit(1)
+  // RLS対応: 現在の公開状態を取得し、更新
+  const result = await withRLS(userId, async (tx) => {
+    // 現在の公開状態を取得（RLSで自動的に自分のデータのみ取得）
+    const [summary] = await tx
+      .select({ isPublic: summaries.isPublic })
+      .from(summaries)
+      .where(eq(summaries.id, summaryId))
+      .limit(1)
 
-  if (!summary) {
-    throw new Error("Summary not found")
-  }
+    if (!summary) {
+      throw new Error("Summary not found")
+    }
 
-  // 公開/非公開を切り替え
-  const newIsPublic = summary.isPublic === 1 ? 0 : 1
+    // 公開/非公開を切り替え
+    const newIsPublic = summary.isPublic === 1 ? 0 : 1
 
-  await db
-    .update(summaries)
-    .set({
-      isPublic: newIsPublic,
-      updatedAt: new Date(),
-    })
-    .where(and(eq(summaries.id, summaryId), eq(summaries.userId, userId)))
+    await tx
+      .update(summaries)
+      .set({
+        isPublic: newIsPublic,
+        updatedAt: new Date(),
+      })
+      .where(eq(summaries.id, summaryId))
+
+    return { isPublic: newIsPublic === 1 }
+  })
 
   revalidatePath("/summaries")
 
-  return { isPublic: newIsPublic === 1 }
+  return result
 }

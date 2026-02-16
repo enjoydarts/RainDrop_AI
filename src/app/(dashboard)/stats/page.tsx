@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { db } from "@/db"
+import { withRLS } from "@/db/rls"
 import { raindrops, summaries, apiUsage } from "@/db/schema"
 import { eq, and, sql, desc, gte, isNull } from "drizzle-orm"
 
@@ -18,93 +18,81 @@ export default async function StatsPage() {
   thisMonthStart.setDate(1)
   thisMonthStart.setHours(0, 0, 0, 0)
 
-  // 1. 基本統計
-  const [stats] = await db
-    .select({
-      totalRaindrops: sql<number>`count(distinct ${raindrops.id})`.mapWith(Number),
-      totalSummaries: sql<number>`count(distinct ${summaries.id})`.mapWith(Number),
-    })
-    .from(raindrops)
-    .leftJoin(summaries, eq(raindrops.id, summaries.raindropId))
-    .where(
-      and(
-        eq(raindrops.userId, userId),
-        isNull(raindrops.deletedAt)
-      )
-    )
+  // RLS対応: すべての統計データを取得
+  const { stats, monthlyUsage, summariesByTone, ratingDistribution, recentSummaries } =
+    await withRLS(userId, async (tx) => {
+      // 1. 基本統計（RLSで自動的にユーザーのデータのみ取得）
+      const [stats] = await tx
+        .select({
+          totalRaindrops: sql<number>`count(distinct ${raindrops.id})`.mapWith(Number),
+          totalSummaries: sql<number>`count(distinct ${summaries.id})`.mapWith(Number),
+        })
+        .from(raindrops)
+        .leftJoin(summaries, eq(raindrops.id, summaries.raindropId))
+        .where(isNull(raindrops.deletedAt))
 
-  // 2. 今月のAPI使用量とコスト
-  const monthlyUsage = await db
-    .select({
-      totalCost: sql<string>`COALESCE(SUM(${apiUsage.costUsd}), 0)`,
-      totalInputTokens: sql<number>`COALESCE(SUM(${apiUsage.inputTokens}), 0)`.mapWith(Number),
-      totalOutputTokens: sql<number>`COALESCE(SUM(${apiUsage.outputTokens}), 0)`.mapWith(Number),
-    })
-    .from(apiUsage)
-    .where(
-      and(
-        eq(apiUsage.userId, userId),
-        gte(apiUsage.createdAt, thisMonthStart)
-      )
-    )
+      // 2. 今月のAPI使用量とコスト
+      const monthlyUsage = await tx
+        .select({
+          totalCost: sql<string>`COALESCE(SUM(${apiUsage.costUsd}), 0)`,
+          totalInputTokens: sql<number>`COALESCE(SUM(${apiUsage.inputTokens}), 0)`.mapWith(
+            Number
+          ),
+          totalOutputTokens: sql<number>`COALESCE(SUM(${apiUsage.outputTokens}), 0)`.mapWith(
+            Number
+          ),
+        })
+        .from(apiUsage)
+        .where(gte(apiUsage.createdAt, thisMonthStart))
 
-  // 3. トーン別要約数
-  const summariesByTone = await db
-    .select({
-      tone: summaries.tone,
-      count: sql<number>`count(*)`.mapWith(Number),
-    })
-    .from(summaries)
-    .where(
-      and(
-        eq(summaries.userId, userId),
-        eq(summaries.status, "completed"),
-        isNull(summaries.deletedAt)
-      )
-    )
-    .groupBy(summaries.tone)
+      // 3. トーン別要約数
+      const summariesByTone = await tx
+        .select({
+          tone: summaries.tone,
+          count: sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(summaries)
+        .where(and(eq(summaries.status, "completed"), isNull(summaries.deletedAt)))
+        .groupBy(summaries.tone)
 
-  // 4. 評価の分布
-  const ratingDistribution = await db
-    .select({
-      rating: summaries.rating,
-      count: sql<number>`count(*)`.mapWith(Number),
-    })
-    .from(summaries)
-    .where(
-      and(
-        eq(summaries.userId, userId),
-        eq(summaries.status, "completed"),
-        sql`${summaries.rating} IS NOT NULL`,
-        isNull(summaries.deletedAt)
-      )
-    )
-    .groupBy(summaries.rating)
-    .orderBy(summaries.rating)
+      // 4. 評価の分布
+      const ratingDistribution = await tx
+        .select({
+          rating: summaries.rating,
+          count: sql<number>`count(*)`.mapWith(Number),
+        })
+        .from(summaries)
+        .where(
+          and(
+            eq(summaries.status, "completed"),
+            sql`${summaries.rating} IS NOT NULL`,
+            isNull(summaries.deletedAt)
+          )
+        )
+        .groupBy(summaries.rating)
+        .orderBy(summaries.rating)
 
-  // 5. 最近の要約（5件）
-  const recentSummaries = await db
-    .select({
-      id: summaries.id,
-      tone: summaries.tone,
-      status: summaries.status,
-      rating: summaries.rating,
-      createdAt: summaries.createdAt,
-      articleTitle: raindrops.title,
+      // 5. 最近の要約（5件）
+      const recentSummaries = await tx
+        .select({
+          id: summaries.id,
+          tone: summaries.tone,
+          status: summaries.status,
+          rating: summaries.rating,
+          createdAt: summaries.createdAt,
+          articleTitle: raindrops.title,
+        })
+        .from(summaries)
+        .innerJoin(
+          raindrops,
+          and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
+        )
+        .where(isNull(summaries.deletedAt))
+        .orderBy(desc(summaries.createdAt))
+        .limit(5)
+
+      return { stats, monthlyUsage, summariesByTone, ratingDistribution, recentSummaries }
     })
-    .from(summaries)
-    .innerJoin(
-      raindrops,
-      and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
-    )
-    .where(
-      and(
-        eq(summaries.userId, userId),
-        isNull(summaries.deletedAt)
-      )
-    )
-    .orderBy(desc(summaries.createdAt))
-    .limit(5)
 
   const totalCost = parseFloat(monthlyUsage[0]?.totalCost || "0")
   const totalInputTokens = monthlyUsage[0]?.totalInputTokens || 0

@@ -1,8 +1,8 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { db } from "@/db"
+import { withRLS } from "@/db/rls"
 import { raindrops, summaries, apiUsage } from "@/db/schema"
-import { eq, count, sum, isNull, and, gte, sql } from "drizzle-orm"
+import { count, sum, isNull, and, gte, sql } from "drizzle-orm"
 import Link from "next/link"
 
 export default async function DashboardPage() {
@@ -14,44 +14,45 @@ export default async function DashboardPage() {
   const user = session!.user
   const userId = user.id!
 
-  // 統計情報を取得
-  const [raindropCount] = await db
-    .select({ count: count() })
-    .from(raindrops)
-    .where(and(eq(raindrops.userId, userId), isNull(raindrops.deletedAt)))
+  // RLS対応: 統計情報を取得
+  const { raindropCount, summaryCount, monthlyCost, recentSummaries } = await withRLS(
+    userId,
+    async (tx) => {
+      // 統計情報を取得（RLSで自動的にユーザーのデータのみ取得）
+      const [raindropCount] = await tx
+        .select({ count: count() })
+        .from(raindrops)
+        .where(isNull(raindrops.deletedAt))
 
-  const [summaryCount] = await db
-    .select({ count: count() })
-    .from(summaries)
-    .where(eq(summaries.userId, userId))
+      const [summaryCount] = await tx.select({ count: count() }).from(summaries)
 
-  // 今月のAPI使用量
-  const now = new Date()
-  const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+      // 今月のAPI使用量
+      const now = new Date()
+      const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
 
-  const [monthlyCost] = await db
-    .select({ total: sum(apiUsage.costUsd) })
-    .from(apiUsage)
-    .where(and(
-      eq(apiUsage.userId, userId),
-      gte(apiUsage.createdAt, firstDayOfMonth)
-    ))
+      const [monthlyCost] = await tx
+        .select({ total: sum(apiUsage.costUsd) })
+        .from(apiUsage)
+        .where(gte(apiUsage.createdAt, firstDayOfMonth))
+
+      // 最近の要約を取得
+      const recentSummaries = await tx
+        .select({
+          id: summaries.id,
+          raindropId: summaries.raindropId,
+          tone: summaries.tone,
+          status: summaries.status,
+          createdAt: summaries.createdAt,
+        })
+        .from(summaries)
+        .orderBy(sql`${summaries.createdAt} DESC`)
+        .limit(3)
+
+      return { raindropCount, summaryCount, monthlyCost, recentSummaries }
+    }
+  )
 
   const totalCost = Number(monthlyCost?.total || 0)
-
-  // 最近の要約を取得
-  const recentSummaries = await db
-    .select({
-      id: summaries.id,
-      raindropId: summaries.raindropId,
-      tone: summaries.tone,
-      status: summaries.status,
-      createdAt: summaries.createdAt,
-    })
-    .from(summaries)
-    .where(eq(summaries.userId, userId))
-    .orderBy(sql`${summaries.createdAt} DESC`)
-    .limit(3)
 
   return (
     <div className="space-y-8">

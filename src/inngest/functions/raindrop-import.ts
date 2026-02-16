@@ -8,6 +8,10 @@ import { NonRetriableError } from "inngest"
 
 /**
  * Raindrop データ取り込み関数
+ *
+ * 注: このInngest関数はサービスロールとして動作します。
+ * RLSが有効な場合、Supabaseのサービスロールキー（service_role）を
+ * DATABASE_URLに使用することで、すべてのデータにアクセス可能です。
  */
 export const raindropImport = inngest.createFunction(
   {

@@ -1,6 +1,6 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
-import { db } from "@/db"
+import { withRLS } from "@/db/rls"
 import { summaries, raindrops } from "@/db/schema"
 import { eq, desc, and } from "drizzle-orm"
 import Link from "next/link"
@@ -15,33 +15,34 @@ export default async function SummariesPage() {
 
   const userId = session.user.id
 
-  // 生成済み要約を取得（記事情報と結合）
-  const items = await db
-    .select({
-      id: summaries.id,
-      summary: summaries.summary,
-      tone: summaries.tone,
-      status: summaries.status,
-      rating: summaries.rating,
-      ratingReason: summaries.ratingReason,
-      error: summaries.error,
-      isPublic: summaries.isPublic,
-      createdAt: summaries.createdAt,
-      raindropId: summaries.raindropId,
-      // 記事情報
-      articleTitle: raindrops.title,
-      articleCover: raindrops.cover,
-      articleLink: raindrops.link,
-      articleExcerpt: raindrops.excerpt,
-    })
-    .from(summaries)
-    .innerJoin(
-      raindrops,
-      and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
-    )
-    .where(eq(summaries.userId, userId))
-    .orderBy(desc(summaries.createdAt))
-    .limit(100)
+  // RLS対応: 生成済み要約を取得（記事情報と結合）
+  const items = await withRLS(userId, async (tx) => {
+    return await tx
+      .select({
+        id: summaries.id,
+        summary: summaries.summary,
+        tone: summaries.tone,
+        status: summaries.status,
+        rating: summaries.rating,
+        ratingReason: summaries.ratingReason,
+        error: summaries.error,
+        isPublic: summaries.isPublic,
+        createdAt: summaries.createdAt,
+        raindropId: summaries.raindropId,
+        // 記事情報
+        articleTitle: raindrops.title,
+        articleCover: raindrops.cover,
+        articleLink: raindrops.link,
+        articleExcerpt: raindrops.excerpt,
+      })
+      .from(summaries)
+      .innerJoin(
+        raindrops,
+        and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
+      )
+      .orderBy(desc(summaries.createdAt))
+      .limit(100)
+  })
 
   return (
     <div className="px-4 sm:px-0">
