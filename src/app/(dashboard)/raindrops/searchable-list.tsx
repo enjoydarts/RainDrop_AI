@@ -4,6 +4,7 @@ import { useState, useMemo } from "react"
 import Image from "next/image"
 import { SummaryButton } from "./summary-button"
 import { DeleteButton } from "./delete-button"
+import { CollectionFilter } from "./collection-filter"
 
 interface Raindrop {
   id: number
@@ -12,6 +13,7 @@ interface Raindrop {
   excerpt: string | null
   cover: string | null
   tags: unknown
+  collectionId: number | null
   createdAtRemote: Date
 }
 
@@ -21,41 +23,82 @@ interface SearchableListProps {
 
 export function SearchableList({ items }: SearchableListProps) {
   const [searchQuery, setSearchQuery] = useState("")
+  const [selectedCollection, setSelectedCollection] = useState<number | null>(null)
 
-  // 検索フィルタリング
+  // コレクション一覧を生成
+  const collections = useMemo(() => {
+    const collectionMap = new Map<number, number>()
+
+    items.forEach((item) => {
+      if (item.collectionId !== null) {
+        const count = collectionMap.get(item.collectionId) || 0
+        collectionMap.set(item.collectionId, count + 1)
+      }
+    })
+
+    return Array.from(collectionMap.entries())
+      .map(([id, count]) => ({
+        id,
+        name: `Collection ${id}`,
+        count,
+      }))
+      .sort((a, b) => b.count - a.count)
+  }, [items])
+
+  // 検索・コレクションフィルタリング
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return items
+    let result = items
+
+    // コレクションフィルタ
+    if (selectedCollection !== null) {
+      result = result.filter((item) => item.collectionId === selectedCollection)
     }
 
-    const query = searchQuery.toLowerCase()
-    return items.filter((item) => {
-      // タイトルで検索
-      if (item.title.toLowerCase().includes(query)) {
-        return true
-      }
-
-      // 本文で検索
-      if (item.excerpt && item.excerpt.toLowerCase().includes(query)) {
-        return true
-      }
-
-      // タグで検索
-      if (item.tags && Array.isArray(item.tags)) {
-        const tags = item.tags as string[]
-        if (tags.some((tag) => tag.toLowerCase().includes(query))) {
+    // 検索フィルタ
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter((item) => {
+        // タイトルで検索
+        if (item.title.toLowerCase().includes(query)) {
           return true
         }
-      }
 
-      return false
-    })
-  }, [items, searchQuery])
+        // 本文で検索
+        if (item.excerpt && item.excerpt.toLowerCase().includes(query)) {
+          return true
+        }
+
+        // タグで検索
+        if (item.tags && Array.isArray(item.tags)) {
+          const tags = item.tags as string[]
+          if (tags.some((tag) => tag.toLowerCase().includes(query))) {
+            return true
+          }
+        }
+
+        return false
+      })
+    }
+
+    return result
+  }, [items, searchQuery, selectedCollection])
 
   return (
-    <div className="space-y-4">
-      {/* 検索バー */}
-      <div className="relative">
+    <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+      {/* サイドバー（コレクションフィルタ） */}
+      {collections.length > 0 && (
+        <div className="lg:col-span-1">
+          <CollectionFilter
+            collections={collections}
+            onFilterChange={setSelectedCollection}
+          />
+        </div>
+      )}
+
+      {/* メインコンテンツ */}
+      <div className={`space-y-4 ${collections.length > 0 ? "lg:col-span-3" : "lg:col-span-4"}`}>
+        {/* 検索バー */}
+        <div className="relative">
         <div className="pointer-events-none absolute inset-y-0 left-0 flex items-center pl-3">
           <svg
             className="h-5 w-5 text-gray-400"
@@ -207,6 +250,7 @@ export function SearchableList({ items }: SearchableListProps) {
           </ul>
         </div>
       )}
+      </div>
     </div>
   )
 }

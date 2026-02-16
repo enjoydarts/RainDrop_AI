@@ -2,7 +2,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { db } from "@/db"
 import { raindrops } from "@/db/schema"
-import { eq, desc, isNull, and } from "drizzle-orm"
+import { eq, desc, isNull, and, sql } from "drizzle-orm"
 import { ImportButton } from "./import-button"
 import { SearchableList } from "./searchable-list"
 
