@@ -43,7 +43,7 @@ export default async function DashboardPage() {
           tone: summaries.tone,
           status: summaries.status,
           createdAt: summaries.createdAt,
-          content: summaries.content,
+          summary: summaries.summary,
           articleTitle: raindrops.title,
         })
         .from(summaries)
@@ -205,9 +205,9 @@ export default async function DashboardPage() {
                   </div>
 
                   {/* 要約プレビュー */}
-                  {summary.status === 'completed' && summary.content && (
+                  {summary.status === 'completed' && summary.summary && (
                     <p className="text-sm text-gray-600 line-clamp-2">
-                      {summary.content.substring(0, 150)}...
+                      {summary.summary.substring(0, 150)}...
                     </p>
                   )}
 
