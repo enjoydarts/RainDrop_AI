@@ -74,3 +74,7 @@ env/
 
 # Logo drafts
 logp.png
+
+# デプロイスクリプト
+deploy-rls-to-supabase.sh
+
