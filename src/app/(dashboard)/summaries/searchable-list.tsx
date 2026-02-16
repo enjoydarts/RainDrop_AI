@@ -328,7 +328,7 @@ export function SearchableList({ items }: SearchableListProps) {
               {/* コンテンツ */}
               <div className="p-5">
                 {/* 記事タイトル */}
-                <Link href={`/share/${item.id}`} target="_blank">
+                <Link href={`/summaries/${item.id}`}>
                   <h3 className="text-base font-bold text-gray-900 line-clamp-2 mb-2 hover:text-indigo-600 transition-colors cursor-pointer">
                     {item.articleTitle}
                   </h3>

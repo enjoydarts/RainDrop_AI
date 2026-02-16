@@ -1,17 +1,23 @@
 import { auth } from "@/auth"
-import { redirect } from "next/navigation"
+import { redirect, notFound } from "next/navigation"
 import { db } from "@/db"
-import { summaries, raindrops, apiUsage } from "@/db/schema"
-import { eq, and, sum } from "drizzle-orm"
-import { notFound } from "next/navigation"
+import { summaries, raindrops } from "@/db/schema"
+import { eq, and } from "drizzle-orm"
+import Image from "next/image"
 import Link from "next/link"
+
+const TONE_LABELS: Record<string, { label: string; icon: string }> = {
+  neutral: { label: "客観的", icon: "📋" },
+  snarky: { label: "毒舌", icon: "😎" },
+  enthusiastic: { label: "熱量高め", icon: "🔥" },
+  casual: { label: "カジュアル", icon: "💬" },
+}
 
 export default async function SummaryDetailPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
-  const { id } = await params
   const session = await auth()
 
   if (!session?.user?.id) {
@@ -19,11 +25,29 @@ export default async function SummaryDetailPage({
   }
 
   const userId = session.user.id
+  const { id } = await params
 
-  // 要約を取得
+  // 自分の要約を取得
   const [summary] = await db
-    .select()
+    .select({
+      id: summaries.id,
+      summary: summaries.summary,
+      tone: summaries.tone,
+      rating: summaries.rating,
+      ratingReason: summaries.ratingReason,
+      model: summaries.model,
+      isPublic: summaries.isPublic,
+      createdAt: summaries.createdAt,
+      articleTitle: raindrops.title,
+      articleLink: raindrops.link,
+      articleCover: raindrops.cover,
+      articleExcerpt: raindrops.excerpt,
+    })
     .from(summaries)
+    .innerJoin(
+      raindrops,
+      and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
+    )
     .where(and(eq(summaries.id, id), eq(summaries.userId, userId)))
     .limit(1)
 
@@ -31,115 +55,112 @@ export default async function SummaryDetailPage({
     notFound()
   }
 
-  // 元記事を取得
-  const [raindrop] = await db
-    .select()
-    .from(raindrops)
-    .where(and(eq(raindrops.userId, userId), eq(raindrops.id, summary.raindropId)))
-    .limit(1)
-
-  // この要約のコストを計算
-  const costResult = await db
-    .select({ total: sum(apiUsage.costUsd) })
-    .from(apiUsage)
-    .where(eq(apiUsage.summaryId, summary.id))
-
-  const cost = Number(costResult[0]?.total || 0)
+  const toneInfo = TONE_LABELS[summary.tone] || { label: summary.tone, icon: "📝" }
 
   return (
-    <div className="mx-auto max-w-4xl px-4 sm:px-0">
-      <div className="mb-4">
+    <div className="px-4 sm:px-0">
+      <div className="mb-6">
         <Link
           href="/summaries"
-          className="text-sm text-indigo-600 hover:text-indigo-500"
+          className="inline-flex items-center gap-2 text-sm text-gray-600 hover:text-gray-900"
         >
-          ← 要約一覧に戻る
+          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 19l-7-7 7-7"
+            />
+          </svg>
+          要約一覧に戻る
         </Link>
       </div>
 
-      <div className="overflow-hidden rounded-lg bg-white shadow">
-        {/* ヘッダー */}
-        <div className="border-b border-gray-200 px-6 py-4">
-          <div className="flex items-start justify-between">
-            <div>
-              <h1 className="mb-2 text-2xl font-bold text-gray-900">
-                {raindrop?.title || "記事タイトル"}
-              </h1>
-              {raindrop?.link && (
-                <a
-                  href={raindrop.link}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="text-sm text-indigo-600 hover:text-indigo-500"
-                >
-                  元記事を見る →
-                </a>
-              )}
-            </div>
+      <article className="rounded-xl border border-gray-200 bg-white shadow-sm overflow-hidden">
+        {/* カバー画像 */}
+        {summary.articleCover && (
+          <div className="relative aspect-[21/9] overflow-hidden bg-gray-100">
+            <Image src={summary.articleCover} alt="" fill className="object-cover" />
           </div>
-        </div>
+        )}
 
-        {/* メタ情報 */}
-        <div className="border-b border-gray-200 bg-gray-50 px-6 py-4">
-          <div className="grid grid-cols-2 gap-4 text-sm md:grid-cols-4">
-            <div>
-              <dt className="text-gray-500">トーン</dt>
-              <dd className="mt-1 font-medium capitalize text-gray-900" suppressHydrationWarning>
-                {String(summary.tone)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">評価</dt>
-              <dd className="mt-1 font-medium text-gray-900" suppressHydrationWarning>
-                {summary.rating ? `⭐ ${String(summary.rating)}/5` : "-"}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">コスト</dt>
-              <dd className="mt-1 font-medium text-gray-900" suppressHydrationWarning>
-                ${cost.toFixed(6)}
-              </dd>
-            </div>
-            <div>
-              <dt className="text-gray-500">生成日時</dt>
-              <dd className="mt-1 font-medium text-gray-900" suppressHydrationWarning>
-                {new Date(summary.createdAt).toLocaleDateString("ja-JP")}
-              </dd>
-            </div>
-          </div>
-        </div>
+        <div className="p-8">
+          {/* 記事タイトル */}
+          <h1 className="text-3xl font-bold text-gray-900 mb-4">{summary.articleTitle}</h1>
 
-        {/* 要約本文 */}
-        <div className="px-6 py-6">
-          <h2 className="mb-4 text-lg font-semibold text-gray-900">要約</h2>
-          <div className="prose prose-sm max-w-none">
-            <p className="whitespace-pre-wrap text-gray-700" suppressHydrationWarning>
-              {String(summary.summary)}
-            </p>
+          {/* メタ情報 */}
+          <div className="flex flex-wrap items-center gap-4 mb-6 pb-6 border-b border-gray-200">
+            <span className="inline-flex items-center gap-1 rounded-full bg-indigo-100 px-3 py-1 text-sm font-semibold text-indigo-700">
+              <span>{toneInfo.icon}</span>
+              {toneInfo.label}
+            </span>
+            {summary.isPublic === 1 && (
+              <span className="inline-flex items-center gap-1 rounded-full bg-green-100 px-3 py-1 text-sm font-semibold text-green-700">
+                <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M8.684 13.342C8.886 12.938 9 12.482 9 12c0-.482-.114-.938-.316-1.342m0 2.684a3 3 0 110-2.684m0 2.684l6.632 3.316m-6.632-6l6.632-3.316m0 0a3 3 0 105.367-2.684 3 3 0 00-5.367 2.684zm0 9.316a3 3 0 105.368 2.684 3 3 0 00-5.368-2.684z"
+                  />
+                </svg>
+                公開中
+              </span>
+            )}
+            {summary.rating && (
+              <span className="text-yellow-400 text-sm">
+                {"★".repeat(summary.rating)}
+                {"☆".repeat(5 - summary.rating)}
+              </span>
+            )}
+            <span className="text-sm text-gray-500">
+              {new Date(summary.createdAt).toLocaleDateString("ja-JP", {
+                year: "numeric",
+                month: "long",
+                day: "numeric",
+              })}
+            </span>
           </div>
 
+          {/* 要約 */}
+          <div className="prose prose-lg max-w-none">
+            <p className="text-gray-800 leading-relaxed whitespace-pre-wrap">{summary.summary}</p>
+          </div>
+
+          {/* 評価理由 */}
           {summary.ratingReason && (
-            <div className="mt-6 rounded-lg bg-gray-50 p-4">
-              <h3 className="mb-2 text-sm font-semibold text-gray-900">評価理由</h3>
-              <p className="text-sm text-gray-700">{String(summary.ratingReason)}</p>
+            <div className="mt-6 rounded-lg bg-gray-50 border border-gray-200 p-4">
+              <h3 className="text-sm font-semibold text-gray-900 mb-2">評価理由</h3>
+              <p className="text-sm text-gray-700 leading-relaxed">{summary.ratingReason}</p>
             </div>
           )}
-        </div>
 
-        {/* 抽出された事実（デバッグ用） */}
-        {summary.factsJson ? (
-          <div className="border-t border-gray-200 px-6 py-4">
-            <details className="text-sm">
-              <summary className="cursor-pointer text-gray-500 hover:text-gray-700">
-                抽出された事実を見る
-              </summary>
-              <pre className="mt-2 overflow-x-auto rounded bg-gray-50 p-4" suppressHydrationWarning>
-                {JSON.stringify(summary.factsJson, null, 2)}
-              </pre>
-            </details>
+          {/* 元記事へのリンク */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <a
+              href={summary.articleLink}
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 text-indigo-600 hover:text-indigo-700 font-medium"
+            >
+              元記事を読む
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"
+                />
+              </svg>
+            </a>
           </div>
-        ) : null}
-      </div>
+
+          {/* フッター */}
+          <div className="mt-8 pt-6 border-t border-gray-200">
+            <p className="text-xs text-gray-500">モデル: {summary.model}</p>
+          </div>
+        </div>
+      </article>
     </div>
   )
 }
