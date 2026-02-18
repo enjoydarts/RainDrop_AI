@@ -5,6 +5,7 @@ import { eq } from "drizzle-orm"
 import { decrypt } from "@/lib/crypto"
 import { RaindropClient } from "@/lib/raindrop"
 import { NonRetriableError } from "inngest"
+import { notifyUser } from "@/lib/ably"
 
 /**
  * Raindrop データ取り込み関数
@@ -115,6 +116,14 @@ export const raindropImport = inngest.createFunction(
         })
         totalExtractRequested++
       }
+    })
+
+    // Ably通知を送信
+    await step.run("notify-user", async () => {
+      await notifyUser(userId, "import:completed", {
+        count: totalImported,
+        extractRequested: totalExtractRequested,
+      })
     })
 
     return {

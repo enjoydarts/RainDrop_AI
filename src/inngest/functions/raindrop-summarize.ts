@@ -11,6 +11,7 @@ import {
   GeneratedSummary,
   Tone,
 } from "../prompts/generate-summary"
+import { notifyUser } from "@/lib/ably"
 
 /**
  * AI要約生成関数
@@ -55,6 +56,12 @@ export const raindropSummarize = inngest.createFunction(
               )
             )
         }
+
+        // Ably通知を送信
+        await notifyUser(userId, "summary:failed", {
+          raindropId,
+          error: error.message,
+        })
       } catch (dbError) {
         console.error("Failed to update summary status:", dbError)
       }
@@ -192,6 +199,16 @@ export const raindropSummarize = inngest.createFunction(
           updatedAt: new Date(),
         })
         .where(eq(summaries.id, summary.id!))
+    })
+
+    // Ably通知を送信
+    await step.run("notify-user", async () => {
+      await notifyUser(userId, "summary:completed", {
+        raindropId,
+        summaryId: summary.id!,
+        title: raindrop.title,
+        rating: result.rating,
+      })
     })
 
     return {

@@ -5,6 +5,8 @@ import Image from "next/image"
 import { LayoutDashboard, Newspaper, FileText, BarChart3, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/Footer"
+import { Toaster } from "@/components/Toaster"
+import { AblyNotifications } from "@/components/AblyNotifications"
 
 export default async function DashboardLayout({
   children,
@@ -23,6 +25,11 @@ export default async function DashboardLayout({
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
+      {/* トースト通知 */}
+      <Toaster />
+      {/* Ablyリアルタイム通知 */}
+      <AblyNotifications userId={user.id!} />
+
       {/* ナビゲーションバー */}
       <nav className="bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
