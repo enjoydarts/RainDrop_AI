@@ -6,6 +6,8 @@ import { eq, and } from "drizzle-orm"
 import Image from "next/image"
 import Link from "next/link"
 import { ClipboardList, Zap, Flame, MessageCircle, FileText } from "lucide-react"
+import { getRelatedSummaries } from "@/lib/related-summaries"
+import { RelatedSummaries } from "./related-summaries"
 
 const TONE_LABELS = {
   neutral: { label: "客観的", Icon: ClipboardList },
@@ -57,6 +59,9 @@ export default async function SummaryDetailPage({
   if (!summary) {
     notFound()
   }
+
+  // 関連記事を取得
+  const relatedSummaries = await getRelatedSummaries(userId, id, 3)
 
   const toneInfo = TONE_LABELS[summary.tone as keyof typeof TONE_LABELS] || {
     label: summary.tone,
@@ -169,6 +174,9 @@ export default async function SummaryDetailPage({
           </div>
         </div>
       </article>
+
+      {/* 関連記事 */}
+      <RelatedSummaries summaries={relatedSummaries} />
     </div>
   )
 }

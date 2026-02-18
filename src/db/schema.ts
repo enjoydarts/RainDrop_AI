@@ -143,6 +143,7 @@ export const summaries = pgTable(
     rating: integer("rating"), // 1-5
     ratingReason: text("rating_reason"),
     factsJson: jsonb("facts_json"), // Step1の事実抽出結果
+    embedding: jsonb("embedding"), // 要約の埋め込みベクトル（関連記事提案用）
     model: text("model").notNull(), // 使用モデル
     status: text("status").notNull().default("pending"), // 'pending', 'processing', 'completed', 'failed'
     error: text("error"),

@@ -12,6 +12,7 @@ import {
   Tone,
 } from "../prompts/generate-summary"
 import { notifyUser } from "@/lib/ably"
+import { generateEmbedding } from "@/lib/embeddings"
 
 /**
  * AI要約生成関数
@@ -186,6 +187,19 @@ export const raindropSummarize = inngest.createFunction(
       return response.content
     })
 
+    // Step3: 埋め込みベクトル生成（関連記事提案用）
+    const embedding = await step.run("generate-embedding", async () => {
+      try {
+        // 要約テキスト + 記事タイトルで埋め込みを生成
+        const textForEmbedding = `${raindrop.title}\n\n${result.summary}`
+        return await generateEmbedding(textForEmbedding)
+      } catch (error) {
+        console.error("[raindrop-summarize] Failed to generate embedding:", error)
+        // 埋め込み生成失敗は致命的ではないので、空配列を返す
+        return []
+      }
+    })
+
     // DBを更新
     await step.run("update-summary", async () => {
       await db
@@ -195,6 +209,7 @@ export const raindropSummarize = inngest.createFunction(
           rating: result.rating,
           ratingReason: result.reason,
           factsJson: facts,
+          embedding: embedding.length > 0 ? embedding : null,
           status: "completed",
           updatedAt: new Date(),
         })
