@@ -3,13 +3,14 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, X, Check, Loader2, FileText, ClipboardList, Zap, Flame, MessageCircle } from "lucide-react"
+import { Search, X, Check, Loader2, FileText, ClipboardList, Zap, Flame, MessageCircle, Clock } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ShareButton } from "./share-button"
+import { RetryButton } from "./retry-button"
 import { togglePublic } from "./actions"
 import { useRouter } from "next/navigation"
 
@@ -44,44 +45,59 @@ interface SearchableListProps {
 export function SearchableList({ items }: SearchableListProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
+  const [selectedTone, setSelectedTone] = useState<string | null>(null)
+  const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
 
   const handleTogglePublic = async (summaryId: string) => {
     await togglePublic(summaryId)
     router.refresh()
   }
 
-  // 検索フィルタリング
+  // 検索とフィルタリング
   const filteredItems = useMemo(() => {
-    if (!searchQuery.trim()) {
-      return items
+    let result = items
+
+    // トーンフィルター
+    if (selectedTone) {
+      result = result.filter((item) => item.tone === selectedTone)
     }
 
-    const query = searchQuery.toLowerCase()
-    return items.filter((item) => {
-      // 記事タイトルで検索
-      if (item.articleTitle && item.articleTitle.toLowerCase().includes(query)) {
-        return true
-      }
+    // ステータスフィルター
+    if (selectedStatus) {
+      result = result.filter((item) => item.status === selectedStatus)
+    }
 
-      // 要約内容で検索
-      if (item.summary && item.summary.toLowerCase().includes(query)) {
-        return true
-      }
+    // 検索フィルター
+    if (searchQuery.trim()) {
+      const query = searchQuery.toLowerCase()
+      result = result.filter((item) => {
+        // 記事タイトルで検索
+        if (item.articleTitle && item.articleTitle.toLowerCase().includes(query)) {
+          return true
+        }
 
-      // 記事本文で検索
-      if (item.articleExcerpt && item.articleExcerpt.toLowerCase().includes(query)) {
-        return true
-      }
+        // 要約内容で検索
+        if (item.summary && item.summary.toLowerCase().includes(query)) {
+          return true
+        }
 
-      // トーンで検索
-      const toneLabel = TONE_LABELS[item.tone]?.label || item.tone
-      if (toneLabel.toLowerCase().includes(query)) {
-        return true
-      }
+        // 記事本文で検索
+        if (item.articleExcerpt && item.articleExcerpt.toLowerCase().includes(query)) {
+          return true
+        }
 
-      return false
-    })
-  }, [items, searchQuery])
+        // トーンで検索
+        const toneLabel = TONE_LABELS[item.tone]?.label || item.tone
+        if (toneLabel.toLowerCase().includes(query)) {
+          return true
+        }
+
+        return false
+      })
+    }
+
+    return result
+  }, [items, searchQuery, selectedTone, selectedStatus])
 
   return (
     <div className="space-y-4">
@@ -109,8 +125,66 @@ export function SearchableList({ items }: SearchableListProps) {
         )}
       </div>
 
-      {/* 検索結果件数 */}
-      {searchQuery && (
+      {/* フィルター */}
+      <div className="flex flex-wrap gap-2">
+        {/* トーンフィルター */}
+        <div className="flex gap-2">
+          <Button
+            variant={selectedTone === null ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedTone(null)}
+            className={selectedTone === null ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+          >
+            すべて
+          </Button>
+          {Object.entries(TONE_LABELS).map(([value, { label, Icon }]) => (
+            <Button
+              key={value}
+              variant={selectedTone === value ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedTone(value)}
+              className={selectedTone === value ? "bg-indigo-600 hover:bg-indigo-700" : ""}
+            >
+              <Icon className="h-3.5 w-3.5 mr-1.5" />
+              {label}
+            </Button>
+          ))}
+        </div>
+
+        {/* ステータスフィルター */}
+        <div className="flex gap-2 ml-auto">
+          <Button
+            variant={selectedStatus === "completed" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedStatus(selectedStatus === "completed" ? null : "completed")}
+            className={selectedStatus === "completed" ? "bg-green-600 hover:bg-green-700" : ""}
+          >
+            <Check className="h-3.5 w-3.5 mr-1.5" />
+            完了のみ
+          </Button>
+          <Button
+            variant={selectedStatus === "processing" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedStatus(selectedStatus === "processing" ? null : "processing")}
+            className={selectedStatus === "processing" ? "bg-yellow-600 hover:bg-yellow-700" : ""}
+          >
+            <Loader2 className="h-3.5 w-3.5 mr-1.5" />
+            処理中のみ
+          </Button>
+          <Button
+            variant={selectedStatus === "failed" ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedStatus(selectedStatus === "failed" ? null : "failed")}
+            className={selectedStatus === "failed" ? "bg-red-600 hover:bg-red-700" : ""}
+          >
+            <X className="h-3.5 w-3.5 mr-1.5" />
+            失敗のみ
+          </Button>
+        </div>
+      </div>
+
+      {/* 検索・フィルター結果件数 */}
+      {(searchQuery || selectedTone || selectedStatus) && (
         <div className="text-sm text-slate-600">
           {filteredItems.length}件の要約が見つかりました
         </div>
@@ -178,6 +252,12 @@ export function SearchableList({ items }: SearchableListProps) {
                           処理中
                         </Badge>
                       )}
+                      {item.status === "pending" && (
+                        <Badge className="bg-slate-600/90 backdrop-blur-sm hover:bg-slate-600/90">
+                          <Clock className="h-3 w-3 mr-1" />
+                          待機中
+                        </Badge>
+                      )}
                     </div>
                   </div>
                 </div>
@@ -213,6 +293,12 @@ export function SearchableList({ items }: SearchableListProps) {
                         <Badge className="bg-yellow-600 hover:bg-yellow-600">
                           <Loader2 className="h-3 w-3 mr-1 animate-spin" />
                           処理中
+                        </Badge>
+                      )}
+                      {item.status === "pending" && (
+                        <Badge className="bg-slate-600 hover:bg-slate-600">
+                          <Clock className="h-3 w-3 mr-1" />
+                          待機中
                         </Badge>
                       )}
                     </div>
@@ -252,12 +338,19 @@ export function SearchableList({ items }: SearchableListProps) {
                   )}
                 </div>
 
-                {/* 共有ボタン */}
+                {/* アクションボタン */}
                 {item.status === "completed" && (
                   <ShareButton
                     summaryId={item.id}
                     isPublic={item.isPublic === 1}
                     onToggle={() => handleTogglePublic(item.id)}
+                  />
+                )}
+                {item.status === "failed" && (
+                  <RetryButton
+                    summaryId={item.id}
+                    raindropId={item.raindropId}
+                    tone={item.tone}
                   />
                 )}
               </div>

@@ -5,6 +5,7 @@ import { withRLS } from "@/db/rls"
 import { summaries } from "@/db/schema"
 import { eq } from "drizzle-orm"
 import { revalidatePath } from "next/cache"
+import { inngest } from "@/inngest/client"
 
 export async function togglePublic(summaryId: string) {
   const session = await auth()
@@ -45,4 +46,27 @@ export async function togglePublic(summaryId: string) {
   revalidatePath("/summaries")
 
   return result
+}
+
+export async function retrySummary(summaryId: string, raindropId: number, tone: string) {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized")
+  }
+
+  const userId = session.user.id
+
+  // 要約を抽出→生成の順で再試行
+  await inngest.send({
+    name: "raindrop/item.extract.requested",
+    data: {
+      userId,
+      raindropId,
+      summaryId,
+      tone,
+    },
+  })
+
+  revalidatePath("/summaries")
 }
