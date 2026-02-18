@@ -67,7 +67,7 @@ export default async function DashboardPage() {
         })
         .from(summaries)
         .leftJoin(raindrops, sql`${summaries.raindropId} = ${raindrops.id}`)
-        .orderBy(sql`${summaries.createdAt} DESC`)
+        .orderBy(sql`${summaries.updatedAt} DESC`)
         .limit(3)
 
       return { raindropCount, summaryCount, monthlyCost, recentSummaries }

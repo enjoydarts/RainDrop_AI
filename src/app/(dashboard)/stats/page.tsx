@@ -96,7 +96,7 @@ export default async function StatsPage() {
           and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
         )
         .where(isNull(summaries.deletedAt))
-        .orderBy(desc(summaries.createdAt))
+        .orderBy(desc(summaries.updatedAt))
         .limit(5)
 
       return { stats, monthlyUsage, summariesByTone, ratingDistribution, recentSummaries }

@@ -44,7 +44,7 @@ export default async function SummariesPage() {
         raindrops,
         and(eq(summaries.raindropId, raindrops.id), eq(summaries.userId, raindrops.userId))
       )
-      .orderBy(desc(summaries.createdAt))
+      .orderBy(desc(summaries.updatedAt))
       .limit(100)
   })
 
