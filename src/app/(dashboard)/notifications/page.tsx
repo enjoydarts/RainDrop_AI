@@ -1,0 +1,139 @@
+import { auth } from "@/auth"
+import { redirect } from "next/navigation"
+import { withRLS } from "@/db/rls"
+import { notifications } from "@/db/schema"
+import { desc, isNull } from "drizzle-orm"
+import { Bell, Check, X, Package } from "lucide-react"
+import { Card, CardContent } from "@/components/ui/card"
+import { Badge } from "@/components/ui/badge"
+import { MarkAsReadButton } from "./mark-as-read-button"
+
+const TYPE_ICONS = {
+  "import:completed": Package,
+  "summary:completed": Check,
+  "summary:failed": X,
+} as const
+
+export default async function NotificationsPage() {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    redirect("/login")
+  }
+
+  const userId = session.user.id
+
+  // 通知一覧を取得（削除されていないもののみ）
+  const notificationList = await withRLS(userId, async (tx) => {
+    return await tx
+      .select()
+      .from(notifications)
+      .where(isNull(notifications.deletedAt))
+      .orderBy(desc(notifications.createdAt))
+      .limit(100)
+  })
+
+  const unreadCount = notificationList.filter((n) => n.isRead === 0).length
+
+  return (
+    <div className="space-y-6">
+      {/* ヘッダー */}
+      <div className="border-b border-slate-200 pb-6">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-3">
+              <Bell className="h-8 w-8 text-indigo-600" />
+              通知
+            </h1>
+            <p className="mt-2 text-base text-slate-600">
+              システムからの通知を確認できます
+            </p>
+          </div>
+          {unreadCount > 0 && (
+            <Badge className="bg-indigo-600 hover:bg-indigo-600 text-lg px-4 py-2">
+              {unreadCount}件未読
+            </Badge>
+          )}
+        </div>
+      </div>
+
+      {/* 通知一覧 */}
+      {notificationList.length === 0 ? (
+        <Card>
+          <CardContent className="p-12 text-center">
+            <Bell className="h-16 w-16 text-slate-300 mx-auto mb-4" />
+            <p className="text-slate-500">通知はありません</p>
+          </CardContent>
+        </Card>
+      ) : (
+        <div className="space-y-3">
+          {notificationList.map((notification) => {
+            const Icon = TYPE_ICONS[notification.type as keyof typeof TYPE_ICONS] || Bell
+            const isUnread = notification.isRead === 0
+
+            return (
+              <Card
+                key={notification.id}
+                className={`card-hover ${isUnread ? "border-indigo-200 bg-indigo-50/30" : ""}`}
+              >
+                <CardContent className="p-6">
+                  <div className="flex items-start gap-4">
+                    {/* アイコン */}
+                    <div
+                      className={`flex-shrink-0 rounded-lg p-3 ${
+                        notification.type === "summary:failed"
+                          ? "bg-red-100"
+                          : "bg-indigo-100"
+                      }`}
+                    >
+                      <Icon
+                        className={`h-6 w-6 ${
+                          notification.type === "summary:failed"
+                            ? "text-red-600"
+                            : "text-indigo-600"
+                        }`}
+                      />
+                    </div>
+
+                    {/* コンテンツ */}
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-3 mb-2">
+                        <h3 className="text-base font-semibold text-slate-900">
+                          {notification.title}
+                        </h3>
+                        {isUnread && (
+                          <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100">
+                            未読
+                          </Badge>
+                        )}
+                      </div>
+                      {notification.description && (
+                        <p className="text-sm text-slate-600 mb-3">
+                          {notification.description}
+                        </p>
+                      )}
+                      <div className="flex items-center justify-between">
+                        <span className="text-xs text-slate-500" suppressHydrationWarning>
+                          {new Date(notification.createdAt).toLocaleString("ja-JP", {
+                            year: "numeric",
+                            month: "short",
+                            day: "numeric",
+                            hour: "2-digit",
+                            minute: "2-digit",
+                          })}
+                        </span>
+                        {isUnread && (
+                          <MarkAsReadButton notificationId={notification.id} />
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}

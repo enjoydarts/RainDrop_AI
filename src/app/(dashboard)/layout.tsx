@@ -2,7 +2,7 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import Link from "next/link"
 import Image from "next/image"
-import { LayoutDashboard, Newspaper, FileText, BarChart3, LogOut } from "lucide-react"
+import { LayoutDashboard, Newspaper, FileText, BarChart3, Bell, LogOut } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/Footer"
 import { Toaster } from "@/components/Toaster"
@@ -69,6 +69,13 @@ export default async function DashboardLayout({
                 >
                   <BarChart3 className="h-4 w-4" />
                   統計
+                </Link>
+                <Link
+                  href="/notifications"
+                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                >
+                  <Bell className="h-4 w-4" />
+                  通知
                 </Link>
               </div>
             </div>

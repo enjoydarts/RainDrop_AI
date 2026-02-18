@@ -267,3 +267,33 @@ export type NewSummary = typeof summaries.$inferInsert
 
 export type ApiUsage = typeof apiUsage.$inferSelect
 export type NewApiUsage = typeof apiUsage.$inferInsert
+
+/**
+ * 通知テーブル
+ * ユーザーへのリアルタイム通知履歴
+ */
+export const notifications = pgTable(
+  "notifications",
+  {
+    id: text("id")
+      .primaryKey()
+      .$defaultFn(() => crypto.randomUUID()),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    type: text("type").notNull(), // 'import:completed', 'summary:completed', 'summary:failed'
+    title: text("title").notNull(),
+    description: text("description"),
+    data: jsonb("data"), // 追加情報（JSON）
+    isRead: integer("is_read").default(0).notNull(), // 0: 未読, 1: 既読
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (table) => ({
+    userIdIdx: index("notifications_user_id_idx").on(table.userId),
+    createdAtIdx: index("notifications_created_at_idx").on(table.createdAt),
+  })
+)
+
+export type Notification = typeof notifications.$inferSelect
+export type NewNotification = typeof notifications.$inferInsert
