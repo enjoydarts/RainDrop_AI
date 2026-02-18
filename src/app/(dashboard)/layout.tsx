@@ -7,6 +7,8 @@ import { Button } from "@/components/ui/button"
 import { Footer } from "@/components/Footer"
 import { Toaster } from "@/components/Toaster"
 import { AblyNotifications } from "@/components/AblyNotifications"
+import { MobileMenu } from "@/components/MobileMenu"
+import { handleSignOut } from "./actions"
 
 export default async function DashboardLayout({
   children,
@@ -34,7 +36,11 @@ export default async function DashboardLayout({
       <nav className="bg-white shadow-sm">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between">
-            <div className="flex">
+            <div className="flex items-center gap-3">
+              {/* モバイルメニュー */}
+              <MobileMenu userName={user.name} userEmail={user.email} />
+
+              {/* ロゴ */}
               <div className="flex flex-shrink-0 items-center">
                 <Link href="/dashboard" className="flex items-center gap-2">
                   <Image src="/logo.png" alt="Raindary" width={32} height={32} />
@@ -79,17 +85,11 @@ export default async function DashboardLayout({
                 </Link>
               </div>
             </div>
-            <div className="flex items-center gap-4">
+            <div className="hidden sm:flex items-center gap-4">
               <span className="text-sm text-slate-700">
                 {user.name || user.email}
               </span>
-              <form
-                action={async () => {
-                  "use server"
-                  const { signOut } = await import("@/auth")
-                  await signOut()
-                }}
-              >
+              <form action={handleSignOut}>
                 <Button
                   type="submit"
                   variant="ghost"
