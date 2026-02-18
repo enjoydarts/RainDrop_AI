@@ -7,6 +7,8 @@ import { Bell, Check, X, Package } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { MarkAsReadButton } from "./mark-as-read-button"
+import { DeleteButton } from "./delete-button"
+import { DeleteAllButton } from "./delete-all-button"
 
 const TYPE_ICONS = {
   "import:completed": Package,
@@ -49,11 +51,14 @@ export default async function NotificationsPage() {
               システムからの通知を確認できます
             </p>
           </div>
-          {unreadCount > 0 && (
-            <Badge className="bg-indigo-600 hover:bg-indigo-600 text-lg px-4 py-2">
-              {unreadCount}件未読
-            </Badge>
-          )}
+          <div className="flex items-center gap-3">
+            {unreadCount > 0 && (
+              <Badge className="bg-indigo-600 hover:bg-indigo-600 text-lg px-4 py-2">
+                {unreadCount}件未読
+              </Badge>
+            )}
+            {notificationList.length > 0 && <DeleteAllButton />}
+          </div>
         </div>
       </div>
 
@@ -122,9 +127,12 @@ export default async function NotificationsPage() {
                             minute: "2-digit",
                           })}
                         </span>
-                        {isUnread && (
-                          <MarkAsReadButton notificationId={notification.id} />
-                        )}
+                        <div className="flex items-center gap-2">
+                          {isUnread && (
+                            <MarkAsReadButton notificationId={notification.id} />
+                          )}
+                          <DeleteButton notificationId={notification.id} />
+                        </div>
                       </div>
                     </div>
                   </div>
