@@ -23,18 +23,8 @@ export function AblyNotifications({ userId }: AblyNotificationsProps) {
     channel.subscribe("import:completed", (message) => {
       const data = message.data
       toast.success("記事の取込が完了しました", {
-        description: `${data.count || 0}件の記事を同期しました`,
+        description: `${data.count || 0}件の記事を同期しました。ページを更新して確認してください。`,
         duration: Infinity, // 手動で閉じるまで表示
-        action: {
-          label: "確認",
-          onClick: () => {
-            window.location.reload()
-          },
-        },
-        cancel: {
-          label: "閉じる",
-          onClick: () => {},
-        },
       })
     })
 
@@ -42,18 +32,10 @@ export function AblyNotifications({ userId }: AblyNotificationsProps) {
     channel.subscribe("summary:completed", (message) => {
       const data = message.data
       toast.success("要約が完了しました", {
-        description: data.title ? `「${data.title}」の要約が完了しました` : undefined,
+        description: data.title
+          ? `「${data.title}」の要約が完了しました。ページを更新して確認してください。`
+          : "ページを更新して確認してください。",
         duration: Infinity, // 手動で閉じるまで表示
-        action: {
-          label: "確認",
-          onClick: () => {
-            window.location.reload()
-          },
-        },
-        cancel: {
-          label: "閉じる",
-          onClick: () => {},
-        },
       })
     })
 
@@ -63,10 +45,6 @@ export function AblyNotifications({ userId }: AblyNotificationsProps) {
       toast.error("要約に失敗しました", {
         description: data.error || "エラーが発生しました",
         duration: Infinity, // 手動で閉じるまで表示
-        cancel: {
-          label: "閉じる",
-          onClick: () => {},
-        },
       })
     })
 
