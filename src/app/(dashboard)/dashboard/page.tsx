@@ -4,7 +4,7 @@ import { withRLS } from "@/db/rls"
 import { raindrops, summaries, apiUsage } from "@/db/schema"
 import { count, sum, isNull, and, gte, sql } from "drizzle-orm"
 import Link from "next/link"
-import { Newspaper, FileText, DollarSign, ChevronRight, ArrowRight, ClipboardList, Zap, Flame, MessageCircle } from "lucide-react"
+import { Newspaper, FileText, DollarSign, ChevronRight, ArrowRight, ClipboardList, Zap, Flame, MessageCircle, Check, X, Loader2, Clock } from "lucide-react"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -15,6 +15,13 @@ const TONE_LABELS = {
   snarky: { label: "毒舌", Icon: Zap },
   enthusiastic: { label: "熱量高め", Icon: Flame },
   casual: { label: "カジュアル", Icon: MessageCircle },
+} as const
+
+const STATUS_LABELS = {
+  completed: { label: "完了", Icon: Check, className: "bg-green-100 text-green-800 hover:bg-green-100" },
+  failed: { label: "失敗", Icon: X, className: "bg-red-100 text-red-800 hover:bg-red-100" },
+  processing: { label: "処理中", Icon: Loader2, className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100" },
+  pending: { label: "待機中", Icon: Clock, className: "bg-slate-100 text-slate-800 hover:bg-slate-100" },
 } as const
 
 export default async function DashboardPage() {
@@ -197,24 +204,19 @@ export default async function DashboardPage() {
                           <h3 className="flex-1 text-base font-semibold text-slate-900 line-clamp-2">
                             {summary.articleTitle || '無題の記事'}
                           </h3>
-                          <Badge
-                            variant={
-                              summary.status === 'completed'
-                                ? 'default'
-                                : summary.status === 'failed'
-                                ? 'destructive'
-                                : 'secondary'
-                            }
-                            className={
-                              summary.status === 'completed'
-                                ? 'bg-green-100 text-green-800 hover:bg-green-100'
-                                : summary.status === 'processing'
-                                ? 'bg-yellow-100 text-yellow-800 hover:bg-yellow-100'
-                                : ''
-                            }
-                          >
-                            {summary.status}
-                          </Badge>
+                          {(() => {
+                            const statusInfo = STATUS_LABELS[summary.status as keyof typeof STATUS_LABELS] || STATUS_LABELS.pending
+                            const StatusIcon = statusInfo.Icon
+                            return (
+                              <Badge
+                                variant={summary.status === 'failed' ? 'destructive' : 'secondary'}
+                                className={statusInfo.className}
+                              >
+                                <StatusIcon className={`h-3 w-3 mr-1 ${summary.status === 'processing' ? 'animate-spin' : ''}`} />
+                                {statusInfo.label}
+                              </Badge>
+                            )
+                          })()}
                         </div>
 
                         {/* 要約プレビュー */}
