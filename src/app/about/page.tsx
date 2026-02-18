@@ -29,7 +29,7 @@ export default function AboutPage() {
                 <h2 className="mb-3 text-2xl font-semibold">Raindaryとは</h2>
                 <p className="text-slate-600 leading-relaxed">
                   Raindaryは、Raindrop.ioに保存した記事を自動的に取り込み、Anthropic Claude APIを使って「読んだフリができる自分語り要約」を生成するツールです。
-                  技術記事を大量に保存するが読み切れないエンジニアのために、高品質なAI要約で効率的な情報キャッチアップを実現します。
+                  記事を大量に保存するが読み切れない方のために、高品質なAI要約で効率的な情報キャッチアップを実現します。
                 </p>
               </section>
 

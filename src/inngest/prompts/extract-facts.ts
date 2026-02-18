@@ -7,14 +7,14 @@ export interface ExtractedFacts {
   keyPoints: string[]
   mainClaim: string
   caveats: string[]
-  techKeywords: string[]
+  keywords: string[]
 }
 
 export function buildExtractFactsPrompt(articleText: string): {
   system: string
   userMessage: string
 } {
-  const system = `あなたは技術記事の要点を構造的に抽出するアシスタントです。
+  const system = `あなたは記事の要点を構造的に抽出するアシスタントです。
 記事を読み、以下のJSON形式で出力してください。
 
 **出力形式:**
@@ -23,7 +23,7 @@ export function buildExtractFactsPrompt(articleText: string): {
   "keyPoints": ["要点1", "要点2", "要点3"],
   "mainClaim": "この記事の主張",
   "caveats": ["注意点1", "注意点2"],
-  "techKeywords": ["キーワード1", "キーワード2"]
+  "keywords": ["キーワード1", "キーワード2"]
 }
 \`\`\`
 
@@ -31,7 +31,7 @@ export function buildExtractFactsPrompt(articleText: string): {
 - keyPoints: 記事の重要なポイントを3〜5個（各50文字以内）
 - mainClaim: 記事の核心的な主張を1文で（100文字以内）
 - caveats: 注意点や制約があれば記載（なければ空配列）
-- techKeywords: 技術キーワードを5〜10個（固有名詞、技術用語）
+- keywords: 重要なキーワードを5〜10個（固有名詞、専門用語、重要な概念）
 
 **重要:** 必ずJSON形式のみを返してください。説明文は不要です。`
 
