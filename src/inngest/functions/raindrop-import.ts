@@ -1,7 +1,7 @@
 import { inngest } from "../client"
 import { db } from "@/db"
-import { users, raindrops } from "@/db/schema"
-import { eq } from "drizzle-orm"
+import { users, raindrops, summaries } from "@/db/schema"
+import { eq, isNull, sql } from "drizzle-orm"
 import { decrypt } from "@/lib/crypto"
 import { RaindropClient } from "@/lib/raindrop"
 import { NonRetriableError } from "inngest"
@@ -98,15 +98,25 @@ export const raindropImport = inngest.createFunction(
 
     // 各記事の本文抽出イベントを発火
     await step.run("trigger-extracts", async () => {
-      // 最新の50件のみ抽出対象とする（初回同期時の負荷軽減）
-      const recentRaindrops = await db
-        .select()
+      // 未要約の記事のみ抽出対象とする（最新50件まで）
+      // summariesテーブルとLEFT JOINして、要約が存在しない記事のみ取得
+      const unsummarizedRaindrops = await db
+        .select({
+          id: raindrops.id,
+          createdAtRemote: raindrops.createdAtRemote,
+        })
         .from(raindrops)
-        .where(eq(raindrops.userId, userId))
-        .orderBy(raindrops.createdAtRemote)
+        .leftJoin(
+          summaries,
+          sql`${raindrops.id} = ${summaries.raindropId} AND ${raindrops.userId} = ${summaries.userId}`
+        )
+        .where(
+          sql`${raindrops.userId} = ${userId} AND ${summaries.id} IS NULL`
+        )
+        .orderBy(sql`${raindrops.createdAtRemote} DESC`)
         .limit(50)
 
-      for (const raindrop of recentRaindrops) {
+      for (const raindrop of unsummarizedRaindrops) {
         await inngest.send({
           name: "raindrop/item.extract.requested",
           data: {
