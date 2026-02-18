@@ -48,7 +48,7 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       console.log("[auth][jwt] JWT callback called", {
         hasAccount: !!account,
         hasProfile: !!profile,
-        sub: token.sub,
+        sub: maskUserId(token.sub),
       })
       // 初回ログイン時にアカウント情報をトークンに追加
       if (account && profile) {
@@ -87,23 +87,10 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
       return token
     },
     async session({ session, token }) {
-      console.log("[auth][session] Session callback called")
-      console.log("[auth][session] Token sub:", token.sub)
-      console.log("[auth][session] Session object:", JSON.stringify(session, null, 2))
-      console.log("[auth][session] Session.user:", JSON.stringify(session.user, null, 2))
-
       // トークンからセッションにユーザー情報をコピー
       if (token.sub && session.user) {
         session.user.id = token.sub
-        console.log("[auth][session] Set user.id to:", token.sub)
-      } else {
-        console.log("[auth][session] WARNING: Cannot set user.id", {
-          hasSub: !!token.sub,
-          hasUser: !!session.user,
-        })
       }
-
-      console.log("[auth][session] Returning session:", JSON.stringify(maskSession(session), null, 2))
       return session
     },
     async signIn({ user, account }) {
