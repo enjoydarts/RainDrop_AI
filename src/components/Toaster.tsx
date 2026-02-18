@@ -14,7 +14,6 @@ export function Toaster() {
           color: "#0f172a",
         },
         className: "shadow-lg",
-        dismissible: true,
         closeButtonStyle: {
           background: "transparent",
           border: "none",
