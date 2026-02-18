@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npm run db:migrate && next build",
+    "build": "npm run db:migrate:run && next build",
     "start": "next start",
     "lint": "next lint",
     "lint:fix": "next lint --fix",
@@ -16,6 +16,7 @@
     "test:coverage": "jest --coverage",
     "db:generate": "drizzle-kit generate",
     "db:migrate": "drizzle-kit migrate",
+    "db:migrate:run": "tsx scripts/migrate.ts",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
   },
