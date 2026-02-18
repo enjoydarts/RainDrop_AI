@@ -14,11 +14,6 @@ export function Toaster() {
           color: "#0f172a",
         },
         className: "shadow-lg",
-        closeButtonStyle: {
-          background: "transparent",
-          border: "none",
-          color: "#64748b",
-        },
       }}
     />
   )
