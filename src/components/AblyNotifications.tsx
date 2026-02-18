@@ -24,10 +24,18 @@ export function AblyNotifications({ userId }: AblyNotificationsProps) {
       const data = message.data
       toast.success("記事の取込が完了しました", {
         description: `${data.count || 0}件の記事を同期しました`,
-        duration: 5000,
+        duration: Infinity, // 手動で閉じるまで表示
+        action: {
+          label: "確認",
+          onClick: () => {
+            window.location.reload()
+          },
+        },
+        cancel: {
+          label: "閉じる",
+          onClick: () => {},
+        },
       })
-      // ページをリフレッシュ（新しいデータを表示）
-      window.location.reload()
     })
 
     // 要約完了イベント
@@ -35,10 +43,18 @@ export function AblyNotifications({ userId }: AblyNotificationsProps) {
       const data = message.data
       toast.success("要約が完了しました", {
         description: data.title ? `「${data.title}」の要約が完了しました` : undefined,
-        duration: 5000,
+        duration: Infinity, // 手動で閉じるまで表示
+        action: {
+          label: "確認",
+          onClick: () => {
+            window.location.reload()
+          },
+        },
+        cancel: {
+          label: "閉じる",
+          onClick: () => {},
+        },
       })
-      // ページをリフレッシュ
-      window.location.reload()
     })
 
     // 要約失敗イベント
@@ -46,7 +62,11 @@ export function AblyNotifications({ userId }: AblyNotificationsProps) {
       const data = message.data
       toast.error("要約に失敗しました", {
         description: data.error || "エラーが発生しました",
-        duration: 5000,
+        duration: Infinity, // 手動で閉じるまで表示
+        cancel: {
+          label: "閉じる",
+          onClick: () => {},
+        },
       })
     })
 
