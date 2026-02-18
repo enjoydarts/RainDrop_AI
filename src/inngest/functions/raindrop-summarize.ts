@@ -192,7 +192,10 @@ export const raindropSummarize = inngest.createFunction(
       try {
         // 要約テキスト + 記事タイトルで埋め込みを生成
         const textForEmbedding = `${raindrop.title}\n\n${result.summary}`
-        return await generateEmbedding(textForEmbedding)
+        return await generateEmbedding(textForEmbedding, {
+          userId,
+          summaryId: summary.id!,
+        })
       } catch (error) {
         console.error("[raindrop-summarize] Failed to generate embedding:", error)
         // 埋め込み生成失敗は致命的ではないので、空配列を返す

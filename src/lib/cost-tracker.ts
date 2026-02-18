@@ -26,9 +26,28 @@ const ANTHROPIC_PRICING = {
 } as const
 
 /**
- * コストを計算
+ * OpenAI API価格表（2026年2月時点）
+ * https://openai.com/api/pricing/
  */
-export function calculateCost(
+const OPENAI_PRICING = {
+  "text-embedding-3-small": {
+    input: 0.02 / 1_000_000, // $0.020 per 1M tokens
+    output: 0, // Embeddingsは出力トークンなし
+  },
+  "text-embedding-3-large": {
+    input: 0.13 / 1_000_000, // $0.130 per 1M tokens
+    output: 0,
+  },
+  "text-embedding-ada-002": {
+    input: 0.10 / 1_000_000, // $0.100 per 1M tokens
+    output: 0,
+  },
+} as const
+
+/**
+ * Anthropic コストを計算
+ */
+export function calculateAnthropicCost(
   model: string,
   inputTokens: number,
   outputTokens: number
@@ -36,11 +55,40 @@ export function calculateCost(
   const pricing = ANTHROPIC_PRICING[model as keyof typeof ANTHROPIC_PRICING]
 
   if (!pricing) {
-    console.warn(`Unknown model for pricing: ${model}`)
+    console.warn(`Unknown Anthropic model for pricing: ${model}`)
     return 0
   }
 
   return inputTokens * pricing.input + outputTokens * pricing.output
+}
+
+/**
+ * OpenAI コストを計算
+ */
+export function calculateOpenAICost(
+  model: string,
+  inputTokens: number
+): number {
+  const pricing = OPENAI_PRICING[model as keyof typeof OPENAI_PRICING]
+
+  if (!pricing) {
+    console.warn(`Unknown OpenAI model for pricing: ${model}`)
+    return 0
+  }
+
+  return inputTokens * pricing.input
+}
+
+/**
+ * 後方互換性のため
+ * @deprecated Use calculateAnthropicCost instead
+ */
+export function calculateCost(
+  model: string,
+  inputTokens: number,
+  outputTokens: number
+): number {
+  return calculateAnthropicCost(model, inputTokens, outputTokens)
 }
 
 /**
@@ -55,7 +103,7 @@ export async function trackAnthropicUsage(params: {
 }): Promise<void> {
   const { userId, summaryId, model, inputTokens, outputTokens } = params
 
-  const cost = calculateCost(model, inputTokens, outputTokens)
+  const cost = calculateAnthropicCost(model, inputTokens, outputTokens)
 
   await db.insert(apiUsage).values({
     userId,
@@ -64,6 +112,30 @@ export async function trackAnthropicUsage(params: {
     model,
     inputTokens,
     outputTokens,
+    costUsd: cost.toFixed(6),
+  })
+}
+
+/**
+ * OpenAI API使用状況を記録
+ */
+export async function trackOpenAIUsage(params: {
+  userId: string
+  summaryId?: string
+  model: string
+  inputTokens: number
+}): Promise<void> {
+  const { userId, summaryId, model, inputTokens } = params
+
+  const cost = calculateOpenAICost(model, inputTokens)
+
+  await db.insert(apiUsage).values({
+    userId,
+    summaryId: summaryId || null,
+    apiProvider: "openai",
+    model,
+    inputTokens,
+    outputTokens: 0, // Embeddingsは出力トークンなし
     costUsd: cost.toFixed(6),
   })
 }

@@ -34,7 +34,7 @@ export default async function DashboardPage() {
   const userId = user.id!
 
   // RLS対応: 統計情報を取得
-  const { raindropCount, summaryCount, monthlyCost, recentSummaries } = await withRLS(
+  const { raindropCount, summaryCount, monthlyCost, monthlyUsageByProvider, recentSummaries } = await withRLS(
     userId,
     async (tx) => {
       // 統計情報を取得（RLSで自動的にユーザーのデータのみ取得）
@@ -45,9 +45,18 @@ export default async function DashboardPage() {
 
       const [summaryCount] = await tx.select({ count: count() }).from(summaries)
 
-      // 今月のAPI使用量
+      // 今月のAPI使用量（プロバイダー別）
       const now = new Date()
       const firstDayOfMonth = new Date(now.getFullYear(), now.getMonth(), 1)
+
+      const monthlyUsageByProvider = await tx
+        .select({
+          provider: apiUsage.apiProvider,
+          total: sum(apiUsage.costUsd),
+        })
+        .from(apiUsage)
+        .where(gte(apiUsage.createdAt, firstDayOfMonth))
+        .groupBy(apiUsage.apiProvider)
 
       const [monthlyCost] = await tx
         .select({ total: sum(apiUsage.costUsd) })
@@ -71,11 +80,19 @@ export default async function DashboardPage() {
         .orderBy(sql`${summaries.updatedAt} DESC`)
         .limit(3)
 
-      return { raindropCount, summaryCount, monthlyCost, recentSummaries }
+      return { raindropCount, summaryCount, monthlyCost, monthlyUsageByProvider, recentSummaries }
     }
   )
 
   const totalCost = Number(monthlyCost?.total || 0)
+
+  // プロバイダー別コストを計算
+  const anthropicCost = Number(
+    monthlyUsageByProvider.find((u) => u.provider === "anthropic")?.total || 0
+  )
+  const openaiCost = Number(
+    monthlyUsageByProvider.find((u) => u.provider === "openai")?.total || 0
+  )
 
   return (
     <div className="space-y-8">
@@ -142,6 +159,21 @@ export default async function DashboardPage() {
                 <dd className="text-4xl font-bold text-slate-900" suppressHydrationWarning>
                   ${totalCost.toFixed(4)}
                 </dd>
+                {/* プロバイダー別内訳 */}
+                <div className="mt-3 space-y-1">
+                  {anthropicCost > 0 && (
+                    <div className="flex items-center justify-between text-xs" suppressHydrationWarning>
+                      <span className="text-slate-500">Claude:</span>
+                      <span className="font-medium text-slate-700">${anthropicCost.toFixed(4)}</span>
+                    </div>
+                  )}
+                  {openaiCost > 0 && (
+                    <div className="flex items-center justify-between text-xs" suppressHydrationWarning>
+                      <span className="text-slate-500">OpenAI:</span>
+                      <span className="font-medium text-slate-700">${openaiCost.toFixed(4)}</span>
+                    </div>
+                  )}
+                </div>
               </div>
               <div className="flex-shrink-0 rounded-lg bg-slate-100 p-3">
                 <DollarSign className="h-7 w-7 text-indigo-600" />

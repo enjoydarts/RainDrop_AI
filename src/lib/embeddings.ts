@@ -1,8 +1,17 @@
+import { trackOpenAIUsage } from "./cost-tracker"
+
+const EMBEDDING_MODEL = "text-embedding-3-small"
+
 /**
  * OpenAI Embeddings API を使用してテキストの埋め込みベクトルを生成
  */
-
-export async function generateEmbedding(text: string): Promise<number[]> {
+export async function generateEmbedding(
+  text: string,
+  options?: {
+    userId?: string
+    summaryId?: string
+  }
+): Promise<number[]> {
   const apiKey = process.env.OPENAI_API_KEY
 
   if (!apiKey) {
@@ -18,7 +27,7 @@ export async function generateEmbedding(text: string): Promise<number[]> {
         Authorization: `Bearer ${apiKey}`,
       },
       body: JSON.stringify({
-        model: "text-embedding-3-small",
+        model: EMBEDDING_MODEL,
         input: text,
         encoding_format: "float",
       }),
@@ -30,6 +39,18 @@ export async function generateEmbedding(text: string): Promise<number[]> {
     }
 
     const data = await response.json()
+
+    // コストトラッキング
+    if (options?.userId) {
+      const usage = data.usage
+      await trackOpenAIUsage({
+        userId: options.userId,
+        summaryId: options.summaryId,
+        model: EMBEDDING_MODEL,
+        inputTokens: usage.total_tokens || 0,
+      })
+    }
+
     return data.data[0].embedding as number[]
   } catch (error) {
     console.error("[embeddings] Failed to generate embedding:", error)
