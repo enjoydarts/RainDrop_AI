@@ -46,7 +46,7 @@ services:
       - inngest_data:/root/.config/inngest
     environment:
       - INNGEST_DEV=1
-    command: ["inngest", "dev"]
+    command: ["inngest", "dev", "-u", "http://web:3000/api/inngest"]
 
   # PostgreSQL
   db:
