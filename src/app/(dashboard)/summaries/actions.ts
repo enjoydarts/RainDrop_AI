@@ -64,9 +64,32 @@ export async function retrySummary(summaryId: string, raindropId: number, tone: 
       userId,
       raindropId,
       summaryId,
-      tone,
+      tone: tone as "snarky" | "neutral" | "enthusiastic" | "casual",
     },
   })
 
   revalidatePath("/summaries")
+}
+
+export async function deleteSummary(summaryId: string) {
+  const session = await auth()
+
+  if (!session?.user?.id) {
+    throw new Error("Unauthorized")
+  }
+
+  const userId = session.user.id
+
+  // 論理削除
+  await withRLS(userId, async (tx) => {
+    await tx
+      .update(summaries)
+      .set({
+        deletedAt: new Date(),
+      })
+      .where(eq(summaries.id, summaryId))
+  })
+
+  revalidatePath("/summaries")
+  revalidatePath("/dashboard")
 }

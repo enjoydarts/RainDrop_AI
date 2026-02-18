@@ -11,6 +11,7 @@ import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
 import { ShareButton } from "./share-button"
 import { RetryButton } from "./retry-button"
+import { DeleteButton } from "./delete-button"
 import { togglePublic } from "./actions"
 import { useRouter } from "next/navigation"
 
@@ -47,6 +48,8 @@ export function SearchableList({ items }: SearchableListProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTone, setSelectedTone] = useState<string | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
+  const [currentPage, setCurrentPage] = useState(1)
+  const itemsPerPage = 12
 
   const handleTogglePublic = async (summaryId: string) => {
     await togglePublic(summaryId)
@@ -98,6 +101,18 @@ export function SearchableList({ items }: SearchableListProps) {
 
     return result
   }, [items, searchQuery, selectedTone, selectedStatus])
+
+  // ページネーション
+  const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
+  const paginatedItems = useMemo(() => {
+    const startIndex = (currentPage - 1) * itemsPerPage
+    return filteredItems.slice(startIndex, startIndex + itemsPerPage)
+  }, [filteredItems, currentPage, itemsPerPage])
+
+  // フィルター変更時にページを1にリセット
+  useMemo(() => {
+    setCurrentPage(1)
+  }, [searchQuery, selectedTone, selectedStatus])
 
   return (
     <div className="space-y-4">
@@ -191,7 +206,7 @@ export function SearchableList({ items }: SearchableListProps) {
       )}
 
       {/* 要約リスト */}
-      {filteredItems.length === 0 ? (
+      {paginatedItems.length === 0 ? (
         <Card>
           <div className="px-4 py-16 text-center">
             <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
@@ -206,8 +221,9 @@ export function SearchableList({ items }: SearchableListProps) {
           </div>
         </Card>
       ) : (
-        <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
-          {filteredItems.map((item) => (
+        <>
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3">
+            {paginatedItems.map((item) => (
             <div
               key={item.id}
               className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm card-hover"
@@ -339,24 +355,83 @@ export function SearchableList({ items }: SearchableListProps) {
                 </div>
 
                 {/* アクションボタン */}
-                {item.status === "completed" && (
-                  <ShareButton
-                    summaryId={item.id}
-                    isPublic={item.isPublic === 1}
-                    onToggle={() => handleTogglePublic(item.id)}
-                  />
-                )}
-                {item.status === "failed" && (
-                  <RetryButton
-                    summaryId={item.id}
-                    raindropId={item.raindropId}
-                    tone={item.tone}
-                  />
-                )}
+                <div className="flex gap-2">
+                  {item.status === "completed" && (
+                    <ShareButton
+                      summaryId={item.id}
+                      isPublic={item.isPublic === 1}
+                      onToggle={() => handleTogglePublic(item.id)}
+                    />
+                  )}
+                  {item.status === "failed" && (
+                    <RetryButton
+                      summaryId={item.id}
+                      raindropId={item.raindropId}
+                      tone={item.tone}
+                    />
+                  )}
+                  {(item.status === "completed" || item.status === "failed") && (
+                    <DeleteButton summaryId={item.id} onDelete={() => router.refresh()} />
+                  )}
+                </div>
               </div>
             </div>
           ))}
-        </div>
+          </div>
+
+          {/* ページネーション */}
+          {totalPages > 1 && (
+            <div className="flex items-center justify-center gap-2 mt-8">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.max(1, p - 1))}
+                disabled={currentPage === 1}
+              >
+                前へ
+              </Button>
+              <div className="flex gap-1">
+                {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => {
+                  // 最初、最後、現在ページの前後2ページのみ表示
+                  if (
+                    page === 1 ||
+                    page === totalPages ||
+                    (page >= currentPage - 2 && page <= currentPage + 2)
+                  ) {
+                    return (
+                      <Button
+                        key={page}
+                        variant={currentPage === page ? "default" : "outline"}
+                        size="sm"
+                        onClick={() => setCurrentPage(page)}
+                        className={
+                          currentPage === page ? "bg-indigo-600 hover:bg-indigo-700" : ""
+                        }
+                      >
+                        {page}
+                      </Button>
+                    )
+                  } else if (page === currentPage - 3 || page === currentPage + 3) {
+                    return (
+                      <span key={page} className="px-2 text-slate-400">
+                        ...
+                      </span>
+                    )
+                  }
+                  return null
+                })}
+              </div>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => setCurrentPage((p) => Math.min(totalPages, p + 1))}
+                disabled={currentPage === totalPages}
+              >
+                次へ
+              </Button>
+            </div>
+          )}
+        </>
       )}
     </div>
   )
