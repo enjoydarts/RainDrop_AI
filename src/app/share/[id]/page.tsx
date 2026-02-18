@@ -5,6 +5,8 @@ import { eq, and } from "drizzle-orm"
 import Image from "next/image"
 import Link from "next/link"
 import { ClipboardList, Zap, Flame, MessageCircle, FileText } from "lucide-react"
+import { headers } from "next/headers"
+import { ShareButtons } from "./share-buttons"
 
 const TONE_LABELS = {
   neutral: { label: "客観的", Icon: ClipboardList },
@@ -19,6 +21,12 @@ export default async function SharedSummaryPage({
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
+
+  // 現在のURLを取得
+  const headersList = await headers()
+  const host = headersList.get("host") || ""
+  const protocol = process.env.NODE_ENV === "development" ? "http" : "https"
+  const currentUrl = `${protocol}://${host}/share/${id}`
 
   // 公開された要約を取得（匿名アクセス、RLSで公開要約のみ取得）
   const [summary] = await withAnonymous(async (tx) => {
@@ -135,6 +143,13 @@ export default async function SharedSummaryPage({
               </div>
             )}
 
+            {/* SNSシェアボタン */}
+            <ShareButtons
+              url={currentUrl}
+              title={summary.articleTitle}
+              text={summary.summary.substring(0, 100)}
+            />
+
             {/* 元記事へのリンク */}
             <div className="mt-8 pt-6 border-t border-slate-200">
               <a
@@ -188,6 +203,7 @@ export async function generateMetadata({
     return await tx
       .select({
         articleTitle: raindrops.title,
+        articleCover: raindrops.cover,
         summary: summaries.summary,
       })
       .from(summaries)
@@ -205,8 +221,23 @@ export async function generateMetadata({
     }
   }
 
+  const title = `${summary.articleTitle} - Raindary要約`
+  const description = summary.summary.substring(0, 160)
+
   return {
-    title: `${summary.articleTitle} - Raindary要約`,
-    description: summary.summary.substring(0, 160),
+    title,
+    description,
+    openGraph: {
+      title,
+      description,
+      type: "article",
+      images: summary.articleCover ? [{ url: summary.articleCover }] : [],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: summary.articleCover ? [summary.articleCover] : [],
+    },
   }
 }
