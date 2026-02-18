@@ -26,7 +26,7 @@ export default async function RaindropsPage() {
       .select()
       .from(raindrops)
       .where(isNull(raindrops.deletedAt))
-      .orderBy(desc(raindrops.syncedAt))
+      .orderBy(desc(raindrops.createdAtRemote))
       .limit(50)
 
     // ユーザーのRaindropアクセストークンを取得（RLSで自動フィルタリング）
