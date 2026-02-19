@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, X, Check, Loader2, FileText, ClipboardList, Zap, Flame, MessageCircle, Clock } from "lucide-react"
+import { Search, X, Check, Loader2, FileText, ClipboardList, Zap, Flame, MessageCircle, Clock, Code, Server, Brain, Blocks, HelpCircle } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -20,6 +20,14 @@ const TONE_LABELS: Record<string, { label: string; Icon: LucideIcon }> = {
   snarky: { label: "毒舌", Icon: Zap },
   enthusiastic: { label: "熱量高め", Icon: Flame },
   casual: { label: "カジュアル", Icon: MessageCircle },
+}
+
+const THEME_LABELS: Record<string, { label: string; Icon: LucideIcon; color: string }> = {
+  frontend: { label: "フロントエンド", Icon: Code, color: "bg-blue-100 text-blue-700 border-blue-200" },
+  backend: { label: "バックエンド", Icon: Server, color: "bg-green-100 text-green-700 border-green-200" },
+  ai: { label: "AI・機械学習", Icon: Brain, color: "bg-purple-100 text-purple-700 border-purple-200" },
+  devops: { label: "DevOps", Icon: Blocks, color: "bg-orange-100 text-orange-700 border-orange-200" },
+  other: { label: "その他", Icon: HelpCircle, color: "bg-slate-100 text-slate-700 border-slate-200" },
 }
 
 interface Summary {
@@ -48,6 +56,7 @@ export function SearchableList({ items }: SearchableListProps) {
   const router = useRouter()
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedTone, setSelectedTone] = useState<string | null>(null)
+  const [selectedTheme, setSelectedTheme] = useState<string | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 12
@@ -64,6 +73,11 @@ export function SearchableList({ items }: SearchableListProps) {
     // トーンフィルター
     if (selectedTone) {
       result = result.filter((item) => item.tone === selectedTone)
+    }
+
+    // テーマフィルター
+    if (selectedTheme) {
+      result = result.filter((item) => item.theme === selectedTheme)
     }
 
     // ステータスフィルター
@@ -101,7 +115,7 @@ export function SearchableList({ items }: SearchableListProps) {
     }
 
     return result
-  }, [items, searchQuery, selectedTone, selectedStatus])
+  }, [items, searchQuery, selectedTone, selectedTheme, selectedStatus])
 
   // ページネーション
   const totalPages = Math.ceil(filteredItems.length / itemsPerPage)
@@ -113,7 +127,7 @@ export function SearchableList({ items }: SearchableListProps) {
   // フィルター変更時にページを1にリセット
   useMemo(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedTone, selectedStatus])
+  }, [searchQuery, selectedTone, selectedTheme, selectedStatus])
 
   return (
     <div className="space-y-4">
@@ -166,6 +180,30 @@ export function SearchableList({ items }: SearchableListProps) {
             </Button>
           ))}
         </div>
+      </div>
+
+      {/* テーマフィルター */}
+      <div className="flex flex-wrap gap-2">
+        <Button
+          variant={selectedTheme === null ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedTheme(null)}
+          className={selectedTheme === null ? "bg-purple-600 hover:bg-purple-700" : ""}
+        >
+          全テーマ
+        </Button>
+        {Object.entries(THEME_LABELS).map(([value, { label, Icon }]) => (
+          <Button
+            key={value}
+            variant={selectedTheme === value ? "default" : "outline"}
+            size="sm"
+            onClick={() => setSelectedTheme(value)}
+            className={selectedTheme === value ? "bg-purple-600 hover:bg-purple-700" : ""}
+          >
+            <Icon className="h-3.5 w-3.5 mr-1.5" />
+            {label}
+          </Button>
+        ))}
 
         {/* ステータスフィルター */}
         <div className="flex gap-2 ml-auto">

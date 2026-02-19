@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RefreshButton } from "@/components/RefreshButton"
 import { SearchableList } from "./searchable-list"
+import { SemanticSearch } from "@/components/SemanticSearch"
 
 export default async function SummariesPage() {
   const session = await auth()
@@ -79,7 +80,19 @@ export default async function SummariesPage() {
           </div>
         </Card>
       ) : (
-        <SearchableList items={items} />
+        <div className="space-y-8">
+          {/* AI意味検索 */}
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">AI意味検索</h2>
+            <SemanticSearch />
+          </div>
+
+          {/* 通常の検索とフィルター */}
+          <div>
+            <h2 className="text-lg font-semibold text-slate-900 mb-4">すべての要約</h2>
+            <SearchableList items={items} />
+          </div>
+        </div>
       )}
     </div>
   )
