@@ -187,59 +187,65 @@ export function SearchableList({ items }: SearchableListProps) {
 
       {/* テーマフィルター */}
       {availableThemes.length > 0 && (
-        <div className="flex flex-wrap gap-2">
-          <Button
-            variant={selectedTheme === null ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedTheme(null)}
-            className={selectedTheme === null ? "bg-purple-600 hover:bg-purple-700" : ""}
-          >
-            全テーマ
-          </Button>
-          {availableThemes.map((theme) => (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-slate-700">テーマで絞り込み</h3>
+            <span className="text-xs text-slate-500">{availableThemes.length}個のテーマ</span>
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
             <Button
-              key={theme}
-              variant={selectedTheme === theme ? "default" : "outline"}
+              variant={selectedTheme === null ? "default" : "outline"}
               size="sm"
-              onClick={() => setSelectedTheme(theme)}
-              className={selectedTheme === theme ? "bg-purple-600 hover:bg-purple-700" : ""}
+              onClick={() => setSelectedTheme(null)}
+              className={`flex-shrink-0 ${selectedTheme === null ? "bg-purple-600 hover:bg-purple-700" : ""}`}
             >
-              {theme}
+              全テーマ
             </Button>
-          ))}
-
-          {/* ステータスフィルター */}
-          <div className="flex gap-2 ml-auto">
-          <Button
-            variant={selectedStatus === "completed" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedStatus(selectedStatus === "completed" ? null : "completed")}
-            className={selectedStatus === "completed" ? "bg-green-600 hover:bg-green-700" : ""}
-          >
-            <Check className="h-3.5 w-3.5 mr-1.5" />
-            完了のみ
-          </Button>
-          <Button
-            variant={selectedStatus === "processing" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedStatus(selectedStatus === "processing" ? null : "processing")}
-            className={selectedStatus === "processing" ? "bg-yellow-600 hover:bg-yellow-700" : ""}
-          >
-            <Loader2 className="h-3.5 w-3.5 mr-1.5" />
-            処理中のみ
-          </Button>
-          <Button
-            variant={selectedStatus === "failed" ? "default" : "outline"}
-            size="sm"
-            onClick={() => setSelectedStatus(selectedStatus === "failed" ? null : "failed")}
-            className={selectedStatus === "failed" ? "bg-red-600 hover:bg-red-700" : ""}
-          >
-            <X className="h-3.5 w-3.5 mr-1.5" />
-            失敗のみ
-          </Button>
+            {availableThemes.map((theme) => (
+              <Button
+                key={theme}
+                variant={selectedTheme === theme ? "default" : "outline"}
+                size="sm"
+                onClick={() => setSelectedTheme(theme)}
+                className={`flex-shrink-0 ${selectedTheme === theme ? "bg-purple-600 hover:bg-purple-700" : ""}`}
+              >
+                {theme}
+              </Button>
+            ))}
           </div>
         </div>
       )}
+
+      {/* ステータスフィルター */}
+      <div className="flex flex-wrap gap-2 justify-end">
+        <Button
+          variant={selectedStatus === "completed" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedStatus(selectedStatus === "completed" ? null : "completed")}
+          className={selectedStatus === "completed" ? "bg-green-600 hover:bg-green-700" : ""}
+        >
+          <Check className="h-3.5 w-3.5 mr-1.5" />
+          完了のみ
+        </Button>
+        <Button
+          variant={selectedStatus === "processing" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedStatus(selectedStatus === "processing" ? null : "processing")}
+          className={selectedStatus === "processing" ? "bg-yellow-600 hover:bg-yellow-700" : ""}
+        >
+          <Loader2 className="h-3.5 w-3.5 mr-1.5" />
+          処理中のみ
+        </Button>
+        <Button
+          variant={selectedStatus === "failed" ? "default" : "outline"}
+          size="sm"
+          onClick={() => setSelectedStatus(selectedStatus === "failed" ? null : "failed")}
+          className={selectedStatus === "failed" ? "bg-red-600 hover:bg-red-700" : ""}
+        >
+          <X className="h-3.5 w-3.5 mr-1.5" />
+          失敗のみ
+        </Button>
+      </div>
 
       {/* 検索・フィルター結果件数 */}
       {(searchQuery || selectedTone || selectedStatus) && (

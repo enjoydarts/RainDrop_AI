@@ -76,6 +76,42 @@ export function AblyNotifications({ userId }: AblyNotificationsProps) {
       })
     })
 
+    // テーマ分類完了イベント
+    channel.subscribe("themes:completed", (message) => {
+      // 重複チェック
+      if (processedMessageIds.current.has(message.id)) {
+        console.log(`[ably] Duplicate message ignored: ${message.id}`)
+        return
+      }
+      processedMessageIds.current.add(message.id)
+
+      const data = message.data
+      const count = data.count || 0
+      toast.success("テーマ分類が完了しました", {
+        description:
+          count > 0
+            ? `${count}件の要約にテーマを割り当てました。ページを更新して確認してください。`
+            : "分類対象の要約がありませんでした。",
+        duration: Infinity, // 手動で閉じるまで表示
+      })
+    })
+
+    // テーマ分類失敗イベント
+    channel.subscribe("themes:failed", (message) => {
+      // 重複チェック
+      if (processedMessageIds.current.has(message.id)) {
+        console.log(`[ably] Duplicate message ignored: ${message.id}`)
+        return
+      }
+      processedMessageIds.current.add(message.id)
+
+      const data = message.data
+      toast.error("テーマ分類に失敗しました", {
+        description: data.error || "エラーが発生しました",
+        duration: Infinity, // 手動で閉じるまで表示
+      })
+    })
+
     // クリーンアップ
     return () => {
       try {
