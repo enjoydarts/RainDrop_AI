@@ -31,6 +31,7 @@ export type Events = {
   "summaries/classify-themes.requested": {
     data: {
       userId: string
+      force?: boolean // 強制再分類フラグ
     }
   }
 }

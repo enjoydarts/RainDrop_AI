@@ -22,9 +22,27 @@ export const classifyThemes = inngest.createFunction(
   },
   { event: "summaries/classify-themes.requested" },
   async ({ event, step }) => {
-    const { userId } = event.data
+    const { userId, force = false } = event.data
 
     try {
+      // 強制再分類の場合、全要約のthemeをnullにリセット
+      if (force) {
+        await step.run("reset-all-themes", async () => {
+          const result = await db
+            .update(summaries)
+            .set({ theme: null })
+            .where(
+              and(
+                eq(summaries.userId, userId),
+                eq(summaries.status, "completed"),
+                isNotNull(summaries.embedding)
+              )
+            )
+          console.log(`[classify-themes] Reset all themes for user: ${userId}`)
+          return result
+        })
+      }
+
       // 既存のテーマ一覧を取得
       const existingThemes = await step.run("fetch-existing-themes", async () => {
         const themesResult = await db

@@ -9,6 +9,7 @@ import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RefreshButton } from "@/components/RefreshButton"
 import { ClassifyThemesButton } from "@/components/ClassifyThemesButton"
+import { RegenerateThemesButton } from "@/components/RegenerateThemesButton"
 import { SearchableList } from "./searchable-list"
 import { SemanticSearch } from "@/components/SemanticSearch"
 
@@ -61,6 +62,7 @@ export default async function SummariesPage() {
         </div>
         <div className="mt-4 sm:mt-0 sm:ml-4 flex gap-2">
           <ClassifyThemesButton />
+          <RegenerateThemesButton />
           <RefreshButton />
         </div>
       </div>
