@@ -102,7 +102,7 @@ export const classifyThemes = inngest.createFunction(
             themeEntries: Array<[string, string]>
           }> => {
             const vectors = unclassifiedSummaries.map((s) => s.embedding as number[])
-            const k = Math.min(15, Math.max(3, Math.floor(vectors.length / 10))) // 動的にクラスタ数を決定（上限15個）
+            const k = Math.min(50, Math.max(5, Math.floor(vectors.length / 5))) // 動的にクラスタ数を決定（上限50個）
 
             console.log(
               `[classify-themes] Running K-means with k=${k} on ${vectors.length} vectors`
@@ -224,7 +224,7 @@ export const classifyThemes = inngest.createFunction(
       const centroidMap = new Map<string, number[]>(themeCentroids)
 
       // 未分類の要約を最も近いテーマに割り当て（閾値以下は新テーマ候補）
-      const SIMILARITY_THRESHOLD = 0.5 // 類似度の閾値
+      const SIMILARITY_THRESHOLD = 0.6 // 類似度の閾値（より厳密に）
       const assignmentResult = await step.run("assign-to-nearest-theme", async () => {
         const assignments = new Map<string, string>()
         const newThemeCandidates: typeof unclassifiedSummaries = []
@@ -264,12 +264,12 @@ export const classifyThemes = inngest.createFunction(
       const newThemeCandidates = assignmentResult.newThemeCandidates
 
       // 新テーマ候補が一定数以上ある場合、新しいテーマを生成
-      if (newThemeCandidates.length >= 5) {
+      if (newThemeCandidates.length >= 3) {
         console.log(`[classify-themes] Creating new themes for ${newThemeCandidates.length} candidates`)
 
         const newThemeResult = await step.run("create-new-themes", async () => {
           const vectors = newThemeCandidates.map(s => s.embedding as number[])
-          const k = Math.min(5, Math.max(1, Math.floor(vectors.length / 5))) // 5件ごとに1テーマ
+          const k = Math.min(10, Math.max(1, Math.floor(vectors.length / 3))) // 3件ごとに1テーマ（上限10個）
 
           console.log(`[classify-themes] Running K-means for new themes with k=${k}`)
 
@@ -358,7 +358,7 @@ export const classifyThemes = inngest.createFunction(
         mode: "incremental",
         existingThemeCount: existingThemes.length,
         assignedToExisting: assignmentResult.assignments.length,
-        newThemesCreated: newThemeCandidates.length >= 5 ? new Set(assignmentMap.values()).size - existingThemes.length : 0,
+        newThemesCreated: newThemeCandidates.length >= 3 ? new Set(assignmentMap.values()).size - existingThemes.length : 0,
       }
     } catch (error) {
       console.error(`[classify-themes] Error:`, error)
