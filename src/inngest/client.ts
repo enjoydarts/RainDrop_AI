@@ -28,6 +28,11 @@ export type Events = {
       tone: "snarky" | "neutral" | "enthusiastic" | "casual"
     }
   }
+  "summaries/classify-themes.requested": {
+    data: {
+      userId: string
+    }
+  }
 }
 
 /**
