@@ -31,7 +31,7 @@ export function buildExtractFactsPrompt(articleText: string): {
 - keyPoints: 記事の重要なポイントを3〜5個（各50文字以内）
 - mainClaim: 記事の核心的な主張を1文で（100文字以内）
 - caveats: 注意点や制約があれば記載（なければ空配列）
-- keywords: 重要なキーワードを5〜10個（固有名詞、専門用語、重要な概念）
+- keywords: 技術キーワードを5〜10個（固有名詞、専門用語、重要な概念）
 
 **重要:** 必ずJSON形式のみを返してください。説明文は不要です。`
 

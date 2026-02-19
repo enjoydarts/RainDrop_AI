@@ -1,5 +1,5 @@
-import { db } from "@/db"
-import { apiUsage } from "@/db/schema"
+import { apiUsage, users } from "@/db/schema"
+import { and, eq, gte, sql } from "drizzle-orm"
 
 /**
  * Anthropic API価格表（2026年2月時点）
@@ -102,6 +102,7 @@ export async function trackAnthropicUsage(params: {
   outputTokens: number
 }): Promise<void> {
   const { userId, summaryId, model, inputTokens, outputTokens } = params
+  const { db } = await import("@/db")
 
   const cost = calculateAnthropicCost(model, inputTokens, outputTokens)
 
@@ -126,6 +127,7 @@ export async function trackOpenAIUsage(params: {
   inputTokens: number
 }): Promise<void> {
   const { userId, summaryId, model, inputTokens } = params
+  const { db } = await import("@/db")
 
   const cost = calculateOpenAICost(model, inputTokens)
 
@@ -145,6 +147,7 @@ export async function trackOpenAIUsage(params: {
  */
 export async function trackRaindropUsage(params: { userId: string }): Promise<void> {
   const { userId } = params
+  const { db } = await import("@/db")
 
   await db.insert(apiUsage).values({
     userId,
@@ -158,10 +161,48 @@ export async function trackRaindropUsage(params: { userId: string }): Promise<vo
  */
 export async function trackExtractUsage(params: { userId: string }): Promise<void> {
   const { userId } = params
+  const { db } = await import("@/db")
 
   await db.insert(apiUsage).values({
     userId,
     apiProvider: "extract",
     costUsd: "0", // 自前サービスなので無料
   })
+}
+
+/**
+ * 当月の累積コスト（USD）を取得
+ */
+export async function getMonthlyCostUsd(userId: string, now: Date = new Date()): Promise<number> {
+  const { db } = await import("@/db")
+  const monthStart = new Date(now.getFullYear(), now.getMonth(), 1)
+
+  const [row] = await db
+    .select({
+      total: sql<string>`COALESCE(SUM(${apiUsage.costUsd}), 0)`,
+    })
+    .from(apiUsage)
+    .where(and(eq(apiUsage.userId, userId), gte(apiUsage.createdAt, monthStart)))
+
+  return Number(row?.total || 0)
+}
+
+/**
+ * ユーザーの予算上限を取得（未設定時は環境変数DEFAULT_MONTHLY_BUDGET_USD）
+ */
+export async function getMonthlyBudgetUsd(userId: string): Promise<number | null> {
+  const { db } = await import("@/db")
+  const [user] = await db
+    .select({ monthlyBudgetUsd: users.monthlyBudgetUsd })
+    .from(users)
+    .where(eq(users.id, userId))
+    .limit(1)
+
+  const configured = user?.monthlyBudgetUsd ? Number(user.monthlyBudgetUsd) : null
+  if (configured && configured > 0) {
+    return configured
+  }
+
+  const fallback = Number(process.env.DEFAULT_MONTHLY_BUDGET_USD || "0")
+  return fallback > 0 ? fallback : null
 }

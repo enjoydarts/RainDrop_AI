@@ -1,7 +1,7 @@
 import { inngest } from "../client"
 import { db } from "@/db"
-import { users, raindrops, summaries } from "@/db/schema"
-import { eq, isNull, sql, inArray, and } from "drizzle-orm"
+import { users, raindrops } from "@/db/schema"
+import { eq, inArray, and } from "drizzle-orm"
 import { decrypt } from "@/lib/crypto"
 import { RaindropClient } from "@/lib/raindrop"
 import { NonRetriableError } from "inngest"
@@ -54,6 +54,10 @@ export const raindropImport = inngest.createFunction(
     // Raindrop APIクライアントを初期化
     const client = new RaindropClient(accessToken)
 
+    const previousImportAt = user.raindropLastImportedAt
+      ? new Date(user.raindropLastImportedAt)
+      : null
+
     // データ取り込み（新規取込記事のIDリストを返す）
     const { newCount: totalImported, newRaindropIds } = await step.run(
       "import-raindrops",
@@ -61,11 +65,15 @@ export const raindropImport = inngest.createFunction(
         let newCount = 0
         let totalCount = 0
         const newIds: number[] = []
+        let shouldStop = false
         console.log("[raindrop-import] Starting import for user:", userId)
 
         for await (const items of client.fetchAllRaindrops({
           collectionId: filters?.collectionId,
         })) {
+          if (shouldStop) {
+            break
+          }
           console.log("[raindrop-import] Fetched batch of items:", items.length)
 
           // バッチ内のIDリストを取得
@@ -83,6 +91,14 @@ export const raindropImport = inngest.createFunction(
 
           // データベースにupsert
           for (const item of items) {
+            if (previousImportAt) {
+              const itemCreatedAt = new Date(item.created)
+              if (itemCreatedAt <= previousImportAt) {
+                shouldStop = true
+                continue
+              }
+            }
+
             const isNew = !existingInBatch.has(item._id)
 
             await db
@@ -126,7 +142,17 @@ export const raindropImport = inngest.createFunction(
       }
     )
 
-    // 新規取込記事のみ本文抽出イベントを発火（最新50件まで）
+    await step.run("mark-last-imported-at", async () => {
+      await db
+        .update(users)
+        .set({
+          raindropLastImportedAt: new Date(),
+          updatedAt: new Date(),
+        })
+        .where(eq(users.id, userId))
+    })
+
+    // 新規取込記事のみ本文抽出イベントを発火（全新規記事）
     const totalExtractRequested = await step.run("trigger-extracts", async () => {
       // 新規記事がない場合はスキップ
       if (newRaindropIds.length === 0) {
@@ -134,16 +160,13 @@ export const raindropImport = inngest.createFunction(
         return 0
       }
 
-      // 新規記事のうち最新50件を抽出対象とする
+      // 新規記事を抽出対象とする
       const newRaindropsToExtract = await db
         .select({
           id: raindrops.id,
-          createdAtRemote: raindrops.createdAtRemote,
         })
         .from(raindrops)
         .where(and(eq(raindrops.userId, userId), inArray(raindrops.id, newRaindropIds)))
-        .orderBy(sql`${raindrops.createdAtRemote} DESC`)
-        .limit(50)
 
       let count = 0
       for (const raindrop of newRaindropsToExtract) {

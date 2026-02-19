@@ -1,15 +1,22 @@
 import Anthropic from "@anthropic-ai/sdk"
 
-if (!process.env.ANTHROPIC_API_KEY) {
-  throw new Error("ANTHROPIC_API_KEY environment variable is not set")
-}
-
 /**
  * Anthropic Claude クライアント
  */
-export const anthropic = new Anthropic({
-  apiKey: process.env.ANTHROPIC_API_KEY,
-})
+let anthropicClient: Anthropic | null = null
+
+function getAnthropicClient(): Anthropic {
+  const apiKey = process.env.ANTHROPIC_API_KEY
+  if (!apiKey) {
+    throw new Error("ANTHROPIC_API_KEY environment variable is not set")
+  }
+
+  if (!anthropicClient) {
+    anthropicClient = new Anthropic({ apiKey })
+  }
+
+  return anthropicClient
+}
 
 /**
  * モデル定義
@@ -39,7 +46,7 @@ export async function sendJsonMessage<T = any>(params: {
 }> {
   const { model, system, messages, maxTokens = 2048 } = params
 
-  const response = await anthropic.messages.create({
+  const response = await getAnthropicClient().messages.create({
     model,
     max_tokens: maxTokens,
     system,

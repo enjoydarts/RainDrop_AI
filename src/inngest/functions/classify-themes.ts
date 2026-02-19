@@ -23,6 +23,7 @@ export const classifyThemes = inngest.createFunction(
   { event: "summaries/classify-themes.requested" },
   async ({ event, step }) => {
     const { userId, force = false } = event.data
+    const BATCH_SIZE = 50
 
     try {
       // 強制再分類の場合、全要約のthemeをnullにリセット
@@ -130,13 +131,16 @@ export const classifyThemes = inngest.createFunction(
         // DBを更新
         const updateCount = await step.run("update-themes", async () => {
           let count = 0
+          const entries = Array.from(themeMap.entries())
 
-          for (const [summaryId, theme] of Array.from(themeMap)) {
-            await db
-              .update(summaries)
-              .set({ theme })
-              .where(eq(summaries.id, summaryId))
-            count++
+          for (let i = 0; i < entries.length; i += BATCH_SIZE) {
+            const chunk = entries.slice(i, i + BATCH_SIZE)
+            await Promise.all(
+              chunk.map(([summaryId, theme]) =>
+                db.update(summaries).set({ theme }).where(eq(summaries.id, summaryId))
+              )
+            )
+            count += chunk.length
           }
 
           console.log(`[classify-themes] Updated ${count} summaries with themes`)
@@ -315,13 +319,16 @@ export const classifyThemes = inngest.createFunction(
       // DBを更新
       const updateCount = await step.run("update-themes-incremental", async () => {
         let count = 0
+        const entries = Array.from(assignmentMap.entries())
 
-        for (const [summaryId, theme] of assignmentMap.entries()) {
-          await db
-            .update(summaries)
-            .set({ theme })
-            .where(eq(summaries.id, summaryId))
-          count++
+        for (let i = 0; i < entries.length; i += BATCH_SIZE) {
+          const chunk = entries.slice(i, i + BATCH_SIZE)
+          await Promise.all(
+            chunk.map(([summaryId, theme]) =>
+              db.update(summaries).set({ theme }).where(eq(summaries.id, summaryId))
+            )
+          )
+          count += chunk.length
         }
 
         console.log(`[classify-themes] Updated ${count} summaries with themes (${assignmentResult.assignments.length} existing, ${newThemeCandidates.length} new theme candidates)`)

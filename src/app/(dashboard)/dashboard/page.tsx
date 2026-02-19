@@ -1,7 +1,7 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { withRLS } from "@/db/rls"
-import { raindrops, summaries, apiUsage } from "@/db/schema"
+import { raindrops, summaries, apiUsage, users } from "@/db/schema"
 import { count, sum, isNull, and, gte, sql } from "drizzle-orm"
 import Link from "next/link"
 import { Newspaper, FileText, DollarSign, ChevronRight, ArrowRight, ClipboardList, Zap, Flame, MessageCircle, Check, X, Loader2, Clock } from "lucide-react"
@@ -34,7 +34,7 @@ export default async function DashboardPage() {
   const userId = user.id!
 
   // RLS対応: 統計情報を取得
-  const { raindropCount, summaryCount, monthlyCost, monthlyUsageByProvider, recentSummaries } = await withRLS(
+  const { raindropCount, summaryCount, monthlyCost, monthlyUsageByProvider, recentSummaries, statusCounts, nextToRead, budgetUsd } = await withRLS(
     userId,
     async (tx) => {
       // 統計情報を取得（RLSで自動的にユーザーのデータのみ取得）
@@ -63,6 +63,11 @@ export default async function DashboardPage() {
         .from(apiUsage)
         .where(gte(apiUsage.createdAt, firstDayOfMonth))
 
+      const [userBudget] = await tx
+        .select({ monthlyBudgetUsd: users.monthlyBudgetUsd })
+        .from(users)
+        .limit(1)
+
       // 最近の要約を取得（記事情報も含む、削除済みを除外）
       const recentSummaries = await tx
         .select({
@@ -80,7 +85,47 @@ export default async function DashboardPage() {
         .orderBy(sql`${summaries.updatedAt} DESC`)
         .limit(3)
 
-      return { raindropCount, summaryCount, monthlyCost, monthlyUsageByProvider, recentSummaries }
+      const statusCounts = await tx
+        .select({
+          status: summaries.status,
+          count: count(),
+        })
+        .from(summaries)
+        .where(sql`${summaries.deletedAt} IS NULL`)
+        .groupBy(summaries.status)
+
+      const nextToRead = await tx
+        .select({
+          id: raindrops.id,
+          title: raindrops.title,
+          createdAtRemote: raindrops.createdAtRemote,
+        })
+        .from(raindrops)
+        .where(
+          and(
+            isNull(raindrops.deletedAt),
+            sql`NOT EXISTS (
+              SELECT 1 FROM summaries s
+              WHERE s.user_id = ${raindrops.userId}
+                AND s.raindrop_id = ${raindrops.id}
+                AND s.status = 'completed'
+                AND s.deleted_at IS NULL
+            )`
+          )
+        )
+        .orderBy(sql`${raindrops.createdAtRemote} DESC`)
+        .limit(5)
+
+      return {
+        raindropCount,
+        summaryCount,
+        monthlyCost,
+        monthlyUsageByProvider,
+        recentSummaries,
+        statusCounts,
+        nextToRead,
+        budgetUsd: userBudget?.monthlyBudgetUsd ? Number(userBudget.monthlyBudgetUsd) : Number(process.env.DEFAULT_MONTHLY_BUDGET_USD || "0"),
+      }
     }
   )
 
@@ -93,6 +138,10 @@ export default async function DashboardPage() {
   const openaiCost = Number(
     monthlyUsageByProvider.find((u) => u.provider === "openai")?.total || 0
   )
+  const budgetUsageRatio = budgetUsd > 0 ? totalCost / budgetUsd : 0
+  const processingCount = statusCounts.find((s) => s.status === "processing")?.count || 0
+  const pendingCount = statusCounts.find((s) => s.status === "pending")?.count || 0
+  const failedCount = statusCounts.find((s) => s.status === "failed")?.count || 0
 
   return (
     <div className="space-y-8">
@@ -210,6 +259,37 @@ export default async function DashboardPage() {
         </CardContent>
       </Card>
 
+      {budgetUsd > 0 && budgetUsageRatio >= 0.8 && (
+        <Card className={`border-2 ${budgetUsageRatio >= 1 ? "border-red-200 bg-red-50" : "border-yellow-200 bg-yellow-50"} shadow-sm`}>
+          <CardContent className="p-4">
+            <p className="text-sm font-semibold text-slate-900">月次予算アラート</p>
+            <p className="mt-1 text-sm text-slate-700">
+              ${totalCost.toFixed(4)} / ${budgetUsd.toFixed(2)} 使用中
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      <Card className="border-2 border-amber-200 bg-amber-50 shadow-sm">
+        <CardContent className="p-6">
+          <h2 className="text-lg font-semibold text-amber-900">処理キュー状況</h2>
+          <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
+            <div className="rounded-md bg-white px-3 py-2">
+              <p className="text-slate-500">処理中</p>
+              <p className="text-lg font-bold text-amber-900">{processingCount}</p>
+            </div>
+            <div className="rounded-md bg-white px-3 py-2">
+              <p className="text-slate-500">待機中</p>
+              <p className="text-lg font-bold text-amber-900">{pendingCount}</p>
+            </div>
+            <div className="rounded-md bg-white px-3 py-2">
+              <p className="text-slate-500">失敗</p>
+              <p className="text-lg font-bold text-red-700">{failedCount}</p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
       {/* 最近の要約 */}
       {recentSummaries.length > 0 && (
         <div>
@@ -280,6 +360,34 @@ export default async function DashboardPage() {
                 </Link>
               )
             })}
+          </div>
+        </div>
+      )}
+
+      {nextToRead.length > 0 && (
+        <div>
+          <div className="mb-4">
+            <h2 className="text-xl font-semibold text-slate-900">次に読む候補</h2>
+            <p className="text-sm text-slate-500">未要約の記事を優先度順に表示しています</p>
+          </div>
+          <div className="space-y-2">
+            {nextToRead.map((item, index) => (
+              <Link
+                key={item.id}
+                href="/raindrops"
+                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50"
+              >
+                <div>
+                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                  <p className="text-xs text-slate-500">
+                    優先度スコア: {Math.max(1, 100 - index * 10)}
+                  </p>
+                </div>
+                <span className="text-xs text-slate-500" suppressHydrationWarning>
+                  {new Date(item.createdAtRemote).toLocaleDateString("ja-JP")}
+                </span>
+              </Link>
+            ))}
           </div>
         </div>
       )}

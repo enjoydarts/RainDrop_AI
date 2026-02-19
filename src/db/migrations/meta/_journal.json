@@ -57,6 +57,13 @@
       "when": 1770976000000,
       "tag": "0007_add_summaries_theme",
       "breakpoints": true
+    },
+    {
+      "idx": 8,
+      "version": "7",
+      "when": 1775815000000,
+      "tag": "0008_add_budget_sync_feedback",
+      "breakpoints": true
     }
   ]
 }

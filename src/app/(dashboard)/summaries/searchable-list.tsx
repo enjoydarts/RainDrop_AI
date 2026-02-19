@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
 import { Search, X, Check, Loader2, FileText, ClipboardList, Zap, Flame, MessageCircle, Clock } from "lucide-react"
@@ -52,6 +52,21 @@ export function SearchableList({ items }: SearchableListProps) {
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 12
+
+  useEffect(() => {
+    const hasInFlight = items.some(
+      (item) => item.status === "processing" || item.status === "pending"
+    )
+    if (!hasInFlight) {
+      return
+    }
+
+    const timer = setInterval(() => {
+      router.refresh()
+    }, 15000)
+
+    return () => clearInterval(timer)
+  }, [items, router])
 
   const handleTogglePublic = async (summaryId: string) => {
     await togglePublic(summaryId)

@@ -1,10 +1,11 @@
 import { inngest } from "../client"
 import { db } from "@/db"
 import { raindrops, summaries } from "@/db/schema"
-import { eq, and } from "drizzle-orm"
+import { eq, and, desc, isNotNull } from "drizzle-orm"
 import { NonRetriableError } from "inngest"
 import { sendJsonMessage, MODELS } from "@/lib/anthropic"
 import { trackAnthropicUsage } from "@/lib/cost-tracker"
+import { getMonthlyBudgetUsd, getMonthlyCostUsd } from "@/lib/cost-tracker"
 import { buildExtractFactsPrompt, ExtractedFacts } from "../prompts/extract-facts"
 import {
   buildGenerateSummaryPrompt,
@@ -61,6 +62,7 @@ export const raindropSummarize = inngest.createFunction(
         // Ably通知を送信
         await notifyUser(userId, "summary:failed", {
           raindropId,
+          summaryId: summaryId || null,
           error: error.message,
         })
       } catch (dbError) {
@@ -141,6 +143,36 @@ export const raindropSummarize = inngest.createFunction(
       }
     })
 
+    // 予算上限チェック
+    await step.run("check-budget-guardrail", async () => {
+      const budgetUsd = await getMonthlyBudgetUsd(userId)
+      if (!budgetUsd) {
+        return
+      }
+
+      const currentMonthlyCost = await getMonthlyCostUsd(userId)
+      if (currentMonthlyCost < budgetUsd) {
+        return
+      }
+
+      await db
+        .update(summaries)
+        .set({
+          status: "failed",
+          error: `月次予算上限（$${budgetUsd.toFixed(2)}）に到達したため処理を停止しました`,
+          updatedAt: new Date(),
+        })
+        .where(eq(summaries.id, summary.id))
+
+      await notifyUser(userId, "summary:failed", {
+        raindropId,
+        summaryId: summary.id,
+        error: `月次予算上限（$${budgetUsd.toFixed(2)}）に到達しました`,
+      })
+
+      throw new NonRetriableError("Monthly budget exceeded")
+    })
+
     // Step1: 事実抽出（Haiku）
     const facts = await step.run("extract-facts", async () => {
       const { system, userMessage } = buildExtractFactsPrompt(raindrop.excerpt!)
@@ -166,7 +198,35 @@ export const raindropSummarize = inngest.createFunction(
 
     // Step2: 要約生成（Sonnet）
     const result = await step.run("generate-summary", async () => {
-      const { system, userMessage } = buildGenerateSummaryPrompt(facts, tone as Tone)
+      // 直近の低評価フィードバックを再生成時に反映
+      const feedbackRows = await db
+        .select({
+          userRating: summaries.userRating,
+          userFeedback: summaries.userFeedback,
+        })
+        .from(summaries)
+        .where(
+          and(
+            eq(summaries.userId, userId),
+            eq(summaries.tone, tone as Tone),
+            isNotNull(summaries.userFeedback)
+          )
+        )
+        .orderBy(desc(summaries.updatedAt))
+        .limit(3)
+
+      const feedbackContext = feedbackRows
+        .map(
+          (row, idx) =>
+            `${idx + 1}. 評価: ${row.userRating ?? "未設定"} / コメント: ${row.userFeedback}`
+        )
+        .join("\n")
+
+      const { system, userMessage } = buildGenerateSummaryPrompt(
+        facts,
+        tone as Tone,
+        feedbackContext || undefined
+      )
 
       const response = await sendJsonMessage<GeneratedSummary>({
         model: MODELS.SONNET,

@@ -1,6 +1,7 @@
 "use client"
 
 import { useState, useMemo } from "react"
+import Link from "next/link"
 import { Bell, Package, Check, X } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
@@ -13,15 +14,87 @@ const TYPE_ICONS = {
   "import:completed": Package,
   "summary:completed": Check,
   "summary:failed": X,
+  "themes:completed": Check,
+  "themes:failed": X,
 } as const
+
+const TYPE_LABELS: Record<string, string> = {
+  "import:completed": "取り込み完了",
+  "summary:completed": "要約完了",
+  "summary:failed": "要約失敗",
+  "themes:completed": "分類完了",
+  "themes:failed": "分類失敗",
+}
+
+const TYPE_ORDER = [
+  "import:completed",
+  "summary:completed",
+  "themes:completed",
+  "summary:failed",
+  "themes:failed",
+] as const
+
+const TYPE_STYLES: Record<
+  string,
+  { iconBg: string; iconText: string; unreadBadge: string }
+> = {
+  "import:completed": {
+    iconBg: "bg-blue-100",
+    iconText: "text-blue-600",
+    unreadBadge: "bg-blue-100 text-blue-700 hover:bg-blue-100",
+  },
+  "summary:completed": {
+    iconBg: "bg-green-100",
+    iconText: "text-green-600",
+    unreadBadge: "bg-green-100 text-green-700 hover:bg-green-100",
+  },
+  "summary:failed": {
+    iconBg: "bg-red-100",
+    iconText: "text-red-600",
+    unreadBadge: "bg-red-100 text-red-700 hover:bg-red-100",
+  },
+  "themes:completed": {
+    iconBg: "bg-green-100",
+    iconText: "text-green-600",
+    unreadBadge: "bg-green-100 text-green-700 hover:bg-green-100",
+  },
+  "themes:failed": {
+    iconBg: "bg-red-100",
+    iconText: "text-red-600",
+    unreadBadge: "bg-red-100 text-red-700 hover:bg-red-100",
+  },
+}
 
 interface Notification {
   id: string
   type: string
   title: string
   description: string | null
+  data: Record<string, unknown> | null
   isRead: number
   createdAt: Date
+}
+
+function getExtraMeta(notification: Notification): string | null {
+  if (notification.type === "import:completed") {
+    const count =
+      typeof notification.data?.extractRequested === "number"
+        ? notification.data.extractRequested
+        : null
+    if (count !== null) {
+      return `要約キュー ${count}件`
+    }
+  }
+
+  if (notification.type === "themes:completed") {
+    const count =
+      typeof notification.data?.count === "number" ? notification.data.count : null
+    if (count !== null) {
+      return `分類 ${count}件`
+    }
+  }
+
+  return null
 }
 
 interface NotificationListProps {
@@ -30,21 +103,76 @@ interface NotificationListProps {
 
 export function NotificationList({ notifications }: NotificationListProps) {
   const [showUnreadOnly, setShowUnreadOnly] = useState(false)
+  const [typeFilter, setTypeFilter] = useState<string | null>(null)
 
   const filteredNotifications = useMemo(() => {
-    if (!showUnreadOnly) {
-      return notifications
+    let result = notifications
+    if (showUnreadOnly) {
+      result = result.filter((n) => n.isRead === 0)
     }
-    return notifications.filter((n) => n.isRead === 0)
-  }, [notifications, showUnreadOnly])
+    if (typeFilter) {
+      result = result.filter((n) => n.type === typeFilter)
+    }
+    return result
+  }, [notifications, showUnreadOnly, typeFilter])
 
   const unreadCount = notifications.filter((n) => n.isRead === 0).length
+  const unreadByType = useMemo(() => {
+    const map = new Map<string, number>()
+    for (const n of notifications) {
+      if (n.isRead !== 0) continue
+      map.set(n.type, (map.get(n.type) || 0) + 1)
+    }
+    return map
+  }, [notifications])
+
+  const availableTypes = useMemo(
+    () => {
+      const existing = new Set(notifications.map((n) => n.type))
+      const ordered = TYPE_ORDER.filter((type) => existing.has(type))
+      const unknown = Array.from(existing).filter((type) => !TYPE_ORDER.includes(type as any))
+      return [...ordered, ...unknown]
+    },
+    [notifications]
+  )
 
   return (
     <>
       {/* フィルタートグル */}
       {notifications.length > 0 && (
-        <div className="flex items-center gap-2 mb-4">
+        <div className="mb-4 space-y-2">
+          <div className="flex flex-wrap items-center gap-2">
+            <Button
+              variant={typeFilter === null ? "default" : "outline"}
+              size="sm"
+              onClick={() => setTypeFilter(null)}
+              className={typeFilter === null ? "bg-slate-700 hover:bg-slate-800" : ""}
+            >
+              すべて
+              {unreadCount > 0 && (
+                <Badge className="ml-2 bg-white text-slate-700 hover:bg-white">
+                  {unreadCount}
+                </Badge>
+              )}
+            </Button>
+            {availableTypes.map((type) => (
+              <Button
+                key={type}
+                variant={typeFilter === type ? "default" : "outline"}
+                size="sm"
+                onClick={() => setTypeFilter(type)}
+                className={typeFilter === type ? "bg-slate-700 hover:bg-slate-800" : ""}
+              >
+                {TYPE_LABELS[type] || type}
+                {(unreadByType.get(type) || 0) > 0 && (
+                  <Badge className="ml-2 bg-white text-slate-700 hover:bg-white">
+                    {unreadByType.get(type)}
+                  </Badge>
+                )}
+              </Button>
+            ))}
+          </div>
+          <div className="flex items-center gap-2">
           <Button
             variant={showUnreadOnly ? "default" : "outline"}
             size="sm"
@@ -59,6 +187,7 @@ export function NotificationList({ notifications }: NotificationListProps) {
               </Badge>
             )}
           </Button>
+          </div>
         </div>
       )}
 
@@ -77,6 +206,12 @@ export function NotificationList({ notifications }: NotificationListProps) {
           {filteredNotifications.map((notification) => {
             const Icon = TYPE_ICONS[notification.type as keyof typeof TYPE_ICONS] || Bell
             const isUnread = notification.isRead === 0
+            const extraMeta = getExtraMeta(notification)
+            const style = TYPE_STYLES[notification.type] || {
+              iconBg: "bg-slate-100",
+              iconText: "text-slate-600",
+              unreadBadge: "bg-slate-100 text-slate-700 hover:bg-slate-100",
+            }
 
             return (
               <Card
@@ -87,19 +222,9 @@ export function NotificationList({ notifications }: NotificationListProps) {
                   <div className="flex items-start gap-3 sm:gap-4">
                     {/* アイコン */}
                     <div
-                      className={`flex-shrink-0 rounded-lg p-2 sm:p-3 ${
-                        notification.type === "summary:failed"
-                          ? "bg-red-100"
-                          : "bg-indigo-100"
-                      }`}
+                      className={`flex-shrink-0 rounded-lg p-2 sm:p-3 ${style.iconBg}`}
                     >
-                      <Icon
-                        className={`h-5 w-5 sm:h-6 sm:w-6 ${
-                          notification.type === "summary:failed"
-                            ? "text-red-600"
-                            : "text-indigo-600"
-                        }`}
-                      />
+                      <Icon className={`h-5 w-5 sm:h-6 sm:w-6 ${style.iconText}`} />
                     </div>
 
                     {/* コンテンツ */}
@@ -109,7 +234,10 @@ export function NotificationList({ notifications }: NotificationListProps) {
                           {notification.title}
                         </h3>
                         {isUnread && (
-                          <Badge variant="secondary" className="bg-indigo-100 text-indigo-700 hover:bg-indigo-100 text-xs sm:text-sm flex-shrink-0">
+                          <Badge
+                            variant="secondary"
+                            className={`${style.unreadBadge} text-xs sm:text-sm flex-shrink-0`}
+                          >
                             未読
                           </Badge>
                         )}
@@ -119,9 +247,23 @@ export function NotificationList({ notifications }: NotificationListProps) {
                           {notification.description}
                         </p>
                       )}
+                      {extraMeta && (
+                        <div className="mb-3">
+                          <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-100">
+                            {extraMeta}
+                          </Badge>
+                        </div>
+                      )}
                       <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
                         <NotificationTime createdAt={notification.createdAt} />
                         <div className="flex items-center gap-2">
+                          {typeof notification.data?.summaryId === "string" && (
+                            <Button asChild size="sm" variant="outline">
+                              <Link href={`/summaries/${notification.data.summaryId}`}>
+                                詳細へ
+                              </Link>
+                            </Button>
+                          )}
                           {isUnread && (
                             <MarkAsReadButton notificationId={notification.id} />
                           )}

@@ -1,9 +1,10 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { withRLS } from "@/db/rls"
-import { raindrops, summaries, apiUsage } from "@/db/schema"
+import { raindrops, summaries, apiUsage, users } from "@/db/schema"
 import { eq, and, sql, desc, gte, isNull } from "drizzle-orm"
 import { ClipboardList, Zap, Flame, MessageCircle } from "lucide-react"
+import { BudgetSettings } from "@/components/BudgetSettings"
 
 const TONE_LABELS = {
   neutral: { label: "客観的", Icon: ClipboardList, color: "bg-slate-100 text-slate-700" },
@@ -27,7 +28,7 @@ export default async function StatsPage() {
   thisMonthStart.setHours(0, 0, 0, 0)
 
   // RLS対応: すべての統計データを取得
-  const { stats, monthlyUsage, monthlyUsageByProvider, summariesByTone, ratingDistribution, recentSummaries } =
+  const { stats, monthlyUsage, monthlyUsageByProvider, summariesByTone, ratingDistribution, recentSummaries, monthlyBudgetUsd } =
     await withRLS(userId, async (tx) => {
       // 1. 基本統計（RLSで自動的にユーザーのデータのみ取得）
       const [stats] = await tx
@@ -111,7 +112,22 @@ export default async function StatsPage() {
         .orderBy(desc(summaries.updatedAt))
         .limit(5)
 
-      return { stats, monthlyUsage, monthlyUsageByProvider, summariesByTone, ratingDistribution, recentSummaries }
+      const [userBudget] = await tx
+        .select({ monthlyBudgetUsd: users.monthlyBudgetUsd })
+        .from(users)
+        .limit(1)
+
+      return {
+        stats,
+        monthlyUsage,
+        monthlyUsageByProvider,
+        summariesByTone,
+        ratingDistribution,
+        recentSummaries,
+        monthlyBudgetUsd: userBudget?.monthlyBudgetUsd
+          ? Number(userBudget.monthlyBudgetUsd)
+          : Number(process.env.DEFAULT_MONTHLY_BUDGET_USD || "0"),
+      }
     })
 
   const totalCost = parseFloat(monthlyUsage[0]?.totalCost || "0")
@@ -132,6 +148,10 @@ export default async function StatsPage() {
       <div className="mb-8 border-b border-slate-200 pb-6">
         <h1 className="text-3xl font-bold tracking-tight text-slate-900">統計</h1>
         <p className="mt-2 text-sm text-slate-600">記事と要約の統計情報</p>
+      </div>
+
+      <div className="mb-8">
+        <BudgetSettings initialBudgetUsd={monthlyBudgetUsd} />
       </div>
 
       {/* 基本統計カード */}

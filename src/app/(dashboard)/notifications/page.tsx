@@ -28,6 +28,13 @@ export default async function NotificationsPage() {
   })
 
   const unreadCount = notificationList.filter((n) => n.isRead === 0).length
+  const normalizedNotificationList = notificationList.map((item) => ({
+    ...item,
+    data:
+      item.data && typeof item.data === "object"
+        ? (item.data as Record<string, unknown>)
+        : null,
+  }))
 
   return (
     <div className="space-y-6">
@@ -55,7 +62,7 @@ export default async function NotificationsPage() {
       </div>
 
       {/* 通知一覧 */}
-      <NotificationList notifications={notificationList} />
+      <NotificationList notifications={normalizedNotificationList} />
     </div>
   )
 }

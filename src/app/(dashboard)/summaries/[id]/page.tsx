@@ -9,6 +9,7 @@ import { ClipboardList, Zap, Flame, MessageCircle, FileText } from "lucide-react
 import { getRelatedSummaries } from "@/lib/related-summaries"
 import { RelatedSummaries } from "./related-summaries"
 import { ThemeEditor } from "./theme-editor"
+import { FeedbackForm } from "./feedback-form"
 
 const TONE_LABELS = {
   neutral: { label: "客観的", Icon: ClipboardList },
@@ -41,6 +42,8 @@ export default async function SummaryDetailPage({
         theme: summaries.theme,
         rating: summaries.rating,
         ratingReason: summaries.ratingReason,
+        userRating: summaries.userRating,
+        userFeedback: summaries.userFeedback,
         model: summaries.model,
         isPublic: summaries.isPublic,
         createdAt: summaries.createdAt,
@@ -170,6 +173,15 @@ export default async function SummaryDetailPage({
               <p className="text-sm text-slate-700 leading-relaxed">{summary.ratingReason}</p>
             </div>
           )}
+
+          {/* ユーザーフィードバック */}
+          <div className="mt-6">
+            <FeedbackForm
+              summaryId={summary.id}
+              initialRating={summary.userRating}
+              initialFeedback={summary.userFeedback}
+            />
+          </div>
 
           {/* 元記事へのリンク */}
           <div className="mt-8 pt-6 border-t border-slate-200">

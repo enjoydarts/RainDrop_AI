@@ -28,11 +28,14 @@ export function getAblyClient() {
 function getNotificationContent(eventName: string, data: Record<string, any>) {
   switch (eventName) {
     case "import:completed":
+      const extractRequested = typeof data.extractRequested === "number"
+        ? data.extractRequested
+        : 0
       return {
         title: "記事の取込が完了しました",
         description:
           data.count > 0
-            ? `新規に${data.count}件の記事を取り込みました。ページを更新して確認してください。`
+            ? `新規に${data.count}件の記事を取り込み、${extractRequested}件を要約キューに追加しました。ページを更新して確認してください。`
             : "新規記事はありませんでした。",
       }
     case "summary:completed":

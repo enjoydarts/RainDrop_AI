@@ -11,11 +11,11 @@ import { MODELS, estimateTokens } from "../anthropic"
 describe("anthropic", () => {
   describe("MODELS", () => {
     it("should have HAIKU model", () => {
-      expect(MODELS.HAIKU).toBe("claude-3-5-haiku-20241022")
+      expect(MODELS.HAIKU).toBe("claude-haiku-4-5")
     })
 
     it("should have SONNET model", () => {
-      expect(MODELS.SONNET).toBe("claude-3-5-sonnet-20241022")
+      expect(MODELS.SONNET).toBe("claude-sonnet-4-5")
     })
 
     it("should have correct model names", () => {

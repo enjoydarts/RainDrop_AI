@@ -47,27 +47,27 @@ describe("cost-tracker", () => {
 
       it("should calculate cost for input tokens only", () => {
         const cost = calculateCost(model, 1_000_000, 0)
-        // $0.80 per 1M input tokens
-        expect(cost).toBeCloseTo(0.8, 6)
+        // $1.00 per 1M input tokens
+        expect(cost).toBeCloseTo(1.0, 6)
       })
 
       it("should calculate cost for output tokens only", () => {
         const cost = calculateCost(model, 0, 1_000_000)
-        // $4.00 per 1M output tokens
-        expect(cost).toBeCloseTo(4.0, 6)
+        // $5.00 per 1M output tokens
+        expect(cost).toBeCloseTo(5.0, 6)
       })
 
       it("should calculate cost for mixed tokens", () => {
         const cost = calculateCost(model, 1_000_000, 1_000_000)
-        // $0.80 + $4.00 = $4.80
-        expect(cost).toBeCloseTo(4.8, 6)
+        // $1.00 + $5.00 = $6.00
+        expect(cost).toBeCloseTo(6.0, 6)
       })
 
       it("should calculate cost for typical request", () => {
         // 例: 5000 input tokens, 1000 output tokens
         const cost = calculateCost(model, 5000, 1000)
-        // (5000 * 0.8/1M) + (1000 * 4.0/1M) = 0.004 + 0.004 = 0.008
-        expect(cost).toBeCloseTo(0.008, 6)
+        // (5000 * 1.0/1M) + (1000 * 5.0/1M) = 0.005 + 0.005 = 0.01
+        expect(cost).toBeCloseTo(0.01, 6)
       })
     })
 
@@ -83,7 +83,7 @@ describe("cost-tracker", () => {
         calculateCost("unknown-model", 1000, 1000)
 
         expect(consoleSpy).toHaveBeenCalledWith(
-          "Unknown model for pricing: unknown-model"
+          "Unknown Anthropic model for pricing: unknown-model"
         )
 
         consoleSpy.mockRestore()
@@ -141,8 +141,8 @@ describe("cost-tracker", () => {
         const haikuCost = calculateCost("claude-3-5-haiku-20241022", 1_000_000, 0)
         const sonnetCost = calculateCost("claude-3-5-sonnet-20241022", 1_000_000, 0)
 
-        // Sonnet input is 3.75x more expensive than Haiku (3.0 / 0.8 = 3.75)
-        expect(sonnetCost / haikuCost).toBeCloseTo(3.75, 2)
+        // Sonnet input is 3x more expensive than Haiku (3.0 / 1.0 = 3)
+        expect(sonnetCost / haikuCost).toBeCloseTo(3.0, 2)
       })
     })
   })

@@ -3,7 +3,10 @@ import { auth } from "@/auth"
 import { db } from "@/db"
 import { summaries, raindrops } from "@/db/schema"
 import { eq, and, sql, desc, isNotNull } from "drizzle-orm"
-import { generateEmbedding, cosineSimilarity } from "@/lib/embeddings"
+import { generateEmbedding } from "@/lib/embeddings"
+
+const QUERY_CACHE_TTL_MS = 1000 * 60 * 30
+const queryEmbeddingCache = new Map<string, { embedding: number[]; expiresAt: number }>()
 
 /**
  * ベクトル検索（意味検索）API
@@ -31,7 +34,19 @@ export async function GET(request: NextRequest) {
     }
 
     // クエリの埋め込みベクトルを生成
-    const queryEmbedding = await generateEmbedding(query.trim())
+    const normalizedQuery = query.trim().toLowerCase()
+    const cached = queryEmbeddingCache.get(normalizedQuery)
+    let queryEmbedding: number[]
+
+    if (cached && cached.expiresAt > Date.now()) {
+      queryEmbedding = cached.embedding
+    } else {
+      queryEmbedding = await generateEmbedding(query.trim())
+      queryEmbeddingCache.set(normalizedQuery, {
+        embedding: queryEmbedding,
+        expiresAt: Date.now() + QUERY_CACHE_TTL_MS,
+      })
+    }
 
     if (!queryEmbedding || queryEmbedding.length === 0) {
       return NextResponse.json(
@@ -78,9 +93,8 @@ export async function GET(request: NextRequest) {
 
     const results = await baseQuery
 
-    return NextResponse.json({
-      query,
-      results: results.map((r) => ({
+    const filteredResults = results
+      .map((r) => ({
         summaryId: r.summaryId,
         raindropId: r.raindropId,
         title: r.title,
@@ -90,8 +104,13 @@ export async function GET(request: NextRequest) {
         theme: r.theme,
         createdAt: r.createdAt,
         similarity: r.similarity,
-      })),
-      count: results.length,
+      }))
+      .filter((r) => r.similarity >= 0.5)
+
+    return NextResponse.json({
+      query,
+      results: filteredResults,
+      count: filteredResults.length,
     })
   } catch (error) {
     console.error("[semantic-search] Error:", error)

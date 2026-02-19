@@ -50,6 +50,10 @@ export const users = pgTable("user", {
   raindropTokenExpiresAt: timestamp("raindrop_token_expires_at", {
     withTimezone: true,
   }),
+  raindropLastImportedAt: timestamp("raindrop_last_imported_at", {
+    withTimezone: true,
+  }),
+  monthlyBudgetUsd: decimal("monthly_budget_usd", { precision: 10, scale: 2 }),
   createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
   updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
 })
@@ -161,6 +165,8 @@ export const summaries = pgTable(
     summary: text("summary").notNull(),
     rating: integer("rating"), // 1-5
     ratingReason: text("rating_reason"),
+    userRating: integer("user_rating"), // 1-5 (ユーザー評価)
+    userFeedback: text("user_feedback"), // ユーザーフィードバック
     factsJson: jsonb("facts_json"), // Step1の事実抽出結果
     embedding: vector("embedding"), // 要約の埋め込みベクトル（関連記事提案用・1536次元）
     theme: text("theme"), // 自動分類されたテーマ ('frontend', 'backend', 'ai', 'devops', 'other')

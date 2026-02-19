@@ -1,7 +1,6 @@
 import { db } from "@/db"
 import { summaries, raindrops } from "@/db/schema"
-import { eq, and, ne, isNull } from "drizzle-orm"
-import { cosineSimilarity } from "./embeddings"
+import { eq, and, ne, isNull, sql } from "drizzle-orm"
 
 export interface RelatedSummary {
   id: string
@@ -37,9 +36,9 @@ export async function getRelatedSummaries(
   }
 
   const currentEmbedding = currentSummary.embedding as number[]
+  const vectorString = `[${currentEmbedding.join(",")}]`
 
-  // 他の要約を全て取得（削除済み・自分自身を除外）
-  const otherSummaries = await db
+  const related = await db
     .select({
       id: summaries.id,
       articleTitle: raindrops.title,
@@ -48,7 +47,7 @@ export async function getRelatedSummaries(
       tone: summaries.tone,
       rating: summaries.rating,
       createdAt: summaries.createdAt,
-      embedding: summaries.embedding,
+      similarity: sql<number>`1 - (${summaries.embedding} <=> ${vectorString}::vector)`,
     })
     .from(summaries)
     .innerJoin(
@@ -60,28 +59,12 @@ export async function getRelatedSummaries(
         eq(summaries.userId, userId),
         ne(summaries.id, summaryId),
         isNull(summaries.deletedAt),
-        eq(summaries.status, "completed")
+        eq(summaries.status, "completed"),
+        sql`${summaries.embedding} IS NOT NULL`
       )
     )
+    .orderBy(sql`${summaries.embedding} <=> ${vectorString}::vector`)
+    .limit(limit)
 
-  // 類似度を計算してソート
-  const withSimilarity = otherSummaries
-    .filter((s) => s.embedding) // 埋め込みがあるものだけ
-    .map((s) => {
-      const similarity = cosineSimilarity(currentEmbedding, s.embedding as number[])
-      return {
-        id: s.id,
-        articleTitle: s.articleTitle,
-        articleCover: s.articleCover,
-        summary: s.summary,
-        tone: s.tone,
-        rating: s.rating,
-        createdAt: s.createdAt,
-        similarity,
-      }
-    })
-    .sort((a, b) => b.similarity - a.similarity) // 類似度降順
-    .slice(0, limit)
-
-  return withSimilarity
+  return related
 }

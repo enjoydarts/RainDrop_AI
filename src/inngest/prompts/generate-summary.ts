@@ -32,7 +32,8 @@ const TONE_DESCRIPTIONS: Record<Tone, string> = {
 
 export function buildGenerateSummaryPrompt(
   facts: ExtractedFacts,
-  tone: Tone
+  tone: Tone,
+  feedbackContext?: string
 ): {
   system: string
   userMessage: string
@@ -48,7 +49,7 @@ export function buildGenerateSummaryPrompt(
 - 含めるべき内容:
   - 記事の概要（何について書かれているか）
   - 注目ポイント（興味深い点、新規性、独自性）
-  - 有用性の評価（参考になりそうか、実用的か）
+  - 実用性の評価（参考になりそうか、実用的か）
   - 5段階評価（1〜5）と一言理由
 
 **出力形式:**
@@ -70,7 +71,10 @@ ${JSON.stringify(facts, null, 2)}
 【口調】
 ${tone}
 
-JSON形式で出力してください。`
+${feedbackContext ? `【過去のフィードバック（改善に活用）】
+${feedbackContext}
+
+` : ""}JSON形式で出力してください。`
 
   return { system, userMessage }
 }
