@@ -26,6 +26,7 @@ interface JobItem {
 
 interface JobListProps {
   jobs: JobItem[]
+  statusCounts: Record<string, number>
 }
 
 const STATUS_LABELS: Record<string, string> = {
@@ -45,7 +46,7 @@ const TONE_META: Record<
   casual: { label: "カジュアル", Icon: MessageCircle },
 }
 
-export function JobList({ jobs }: JobListProps) {
+export function JobList({ jobs, statusCounts }: JobListProps) {
   const router = useRouter()
   const [statusFilter, setStatusFilter] = useState<string | null>(null)
   const [toneFilter, setToneFilter] = useState<string | null>(null)
@@ -82,14 +83,6 @@ export function JobList({ jobs }: JobListProps) {
     })
   }, [jobs, statusFilter, toneFilter])
 
-  const countsByStatus = useMemo(() => {
-    const counts = new Map<string, number>()
-    for (const job of jobs) {
-      counts.set(job.status, (counts.get(job.status) || 0) + 1)
-    }
-    return counts
-  }, [jobs])
-
   return (
     <div className="space-y-4">
       <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
@@ -97,7 +90,7 @@ export function JobList({ jobs }: JobListProps) {
           <Card key={status} className="p-4">
             <p className="text-xs text-slate-500">{STATUS_LABELS[status] || status}</p>
             <p className="mt-1 text-2xl font-bold text-slate-900">
-              {countsByStatus.get(status) || 0}
+              {statusCounts[status] || 0}
             </p>
           </Card>
         ))}
