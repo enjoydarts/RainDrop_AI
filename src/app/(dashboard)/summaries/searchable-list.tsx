@@ -3,7 +3,7 @@
 import { useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, X, Check, Loader2, FileText, ClipboardList, Zap, Flame, MessageCircle, Clock, Code, Server, Brain, Blocks, HelpCircle } from "lucide-react"
+import { Search, X, Check, Loader2, FileText, ClipboardList, Zap, Flame, MessageCircle, Clock } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -20,14 +20,6 @@ const TONE_LABELS: Record<string, { label: string; Icon: LucideIcon }> = {
   snarky: { label: "毒舌", Icon: Zap },
   enthusiastic: { label: "熱量高め", Icon: Flame },
   casual: { label: "カジュアル", Icon: MessageCircle },
-}
-
-const THEME_LABELS: Record<string, { label: string; Icon: LucideIcon; color: string }> = {
-  frontend: { label: "フロントエンド", Icon: Code, color: "bg-blue-100 text-blue-700 border-blue-200" },
-  backend: { label: "バックエンド", Icon: Server, color: "bg-green-100 text-green-700 border-green-200" },
-  ai: { label: "AI・機械学習", Icon: Brain, color: "bg-purple-100 text-purple-700 border-purple-200" },
-  devops: { label: "DevOps", Icon: Blocks, color: "bg-orange-100 text-orange-700 border-orange-200" },
-  other: { label: "その他", Icon: HelpCircle, color: "bg-slate-100 text-slate-700 border-slate-200" },
 }
 
 interface Summary {
@@ -65,6 +57,17 @@ export function SearchableList({ items }: SearchableListProps) {
     await togglePublic(summaryId)
     router.refresh()
   }
+
+  // itemsから動的にテーマ一覧を抽出
+  const availableThemes = useMemo(() => {
+    const themes = new Set<string>()
+    items.forEach((item) => {
+      if (item.theme) {
+        themes.add(item.theme)
+      }
+    })
+    return Array.from(themes).sort()
+  }, [items])
 
   // 検索とフィルタリング
   const filteredItems = useMemo(() => {
@@ -183,30 +186,30 @@ export function SearchableList({ items }: SearchableListProps) {
       </div>
 
       {/* テーマフィルター */}
-      <div className="flex flex-wrap gap-2">
-        <Button
-          variant={selectedTheme === null ? "default" : "outline"}
-          size="sm"
-          onClick={() => setSelectedTheme(null)}
-          className={selectedTheme === null ? "bg-purple-600 hover:bg-purple-700" : ""}
-        >
-          全テーマ
-        </Button>
-        {Object.entries(THEME_LABELS).map(([value, { label, Icon }]) => (
+      {availableThemes.length > 0 && (
+        <div className="flex flex-wrap gap-2">
           <Button
-            key={value}
-            variant={selectedTheme === value ? "default" : "outline"}
+            variant={selectedTheme === null ? "default" : "outline"}
             size="sm"
-            onClick={() => setSelectedTheme(value)}
-            className={selectedTheme === value ? "bg-purple-600 hover:bg-purple-700" : ""}
+            onClick={() => setSelectedTheme(null)}
+            className={selectedTheme === null ? "bg-purple-600 hover:bg-purple-700" : ""}
           >
-            <Icon className="h-3.5 w-3.5 mr-1.5" />
-            {label}
+            全テーマ
           </Button>
-        ))}
+          {availableThemes.map((theme) => (
+            <Button
+              key={theme}
+              variant={selectedTheme === theme ? "default" : "outline"}
+              size="sm"
+              onClick={() => setSelectedTheme(theme)}
+              className={selectedTheme === theme ? "bg-purple-600 hover:bg-purple-700" : ""}
+            >
+              {theme}
+            </Button>
+          ))}
 
-        {/* ステータスフィルター */}
-        <div className="flex gap-2 ml-auto">
+          {/* ステータスフィルター */}
+          <div className="flex gap-2 ml-auto">
           <Button
             variant={selectedStatus === "completed" ? "default" : "outline"}
             size="sm"
@@ -234,8 +237,9 @@ export function SearchableList({ items }: SearchableListProps) {
             <X className="h-3.5 w-3.5 mr-1.5" />
             失敗のみ
           </Button>
+          </div>
         </div>
-      </div>
+      )}
 
       {/* 検索・フィルター結果件数 */}
       {(searchQuery || selectedTone || selectedStatus) && (

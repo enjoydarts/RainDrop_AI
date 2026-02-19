@@ -4,6 +4,11 @@
  */
 
 import { cosineSimilarity } from "./embeddings"
+import OpenAI from "openai"
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+})
 
 export interface ClusterResult {
   clusters: number[]
@@ -129,82 +134,67 @@ export function kmeans(
 }
 
 /**
- * テーマラベルの定義
+ * クラスタ番号を動的に生成されたテーマラベルに変換
+ * LLMを使って各クラスタの代表的な要約からテーマを自動命名
  */
-export const THEME_LABELS = {
-  0: "frontend",
-  1: "backend",
-  2: "ai",
-  3: "devops",
-  4: "other",
-} as const
-
-export type ThemeLabel = (typeof THEME_LABELS)[keyof typeof THEME_LABELS]
-
-/**
- * クラスタ番号をテーマラベルに変換
- * 各クラスタの代表的なキーワードから判定
- */
-export function assignThemeLabels(
+export async function assignThemeLabels(
   clusters: number[],
   summaries: { id: string; summary: string }[]
-): Map<string, ThemeLabel> {
+): Promise<Map<string, string>> {
   const k = Math.max(...clusters) + 1
-  const themeMap = new Map<string, ThemeLabel>()
+  const themeMap = new Map<string, string>()
 
-  // クラスタごとにキーワードを集計してテーマを判定
-  const clusterKeywords: Map<number, string[]> = new Map()
+  // クラスタごとに要約を分類
+  const clusterSummaries: Map<number, Array<{ id: string; summary: string }>> = new Map()
 
   for (let i = 0; i < clusters.length; i++) {
     const clusterId = clusters[i]
-    const summary = summaries[i].summary.toLowerCase()
 
-    if (!clusterKeywords.has(clusterId)) {
-      clusterKeywords.set(clusterId, [])
+    if (!clusterSummaries.has(clusterId)) {
+      clusterSummaries.set(clusterId, [])
     }
-    clusterKeywords.get(clusterId)!.push(summary)
+    clusterSummaries.get(clusterId)!.push(summaries[i])
   }
 
-  // クラスタごとにテーマを判定
-  const clusterThemes = new Map<number, ThemeLabel>()
+  // クラスタごとにLLMでテーマを生成
+  const clusterThemes = new Map<number, string>()
 
-  for (const [clusterId, summaryTexts] of clusterKeywords.entries()) {
-    const allText = summaryTexts.join(" ")
+  for (const [clusterId, clusterItems] of clusterSummaries.entries()) {
+    // 代表的な要約を最大5個抽出
+    const representativeSummaries = clusterItems.slice(0, 5).map((item) => item.summary)
 
-    // キーワードベースで分類
-    const frontendScore =
-      (allText.match(/react|vue|angular|frontend|css|html|ui|ux|component/g) || [])
-        .length
-    const backendScore =
-      (allText.match(/api|server|database|backend|node|python|java|go|rust/g) || [])
-        .length
-    const aiScore =
-      (allText.match(/ai|ml|llm|gpt|claude|machine learning|deep learning|neural/g) ||
-        []).length
-    const devopsScore =
-      (allText.match(/docker|kubernetes|ci\/cd|deploy|devops|aws|gcp|azure/g) || [])
-        .length
+    try {
+      const response = await openai.chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [
+          {
+            role: "system",
+            content:
+              "あなたは記事要約のテーマを命名する専門家です。与えられた要約群の共通テーマを1-2単語の日本語で簡潔に命名してください。例: TypeScript, セキュリティ, データベース設計, UI/UX, DevOps など。テーマ名のみを返してください。",
+          },
+          {
+            role: "user",
+            content: `以下の要約群の共通テーマを1-2単語で命名してください:\n\n${representativeSummaries.join("\n\n")}`,
+          },
+        ],
+        temperature: 0.3,
+        max_tokens: 20,
+      })
 
-    const scores = [
-      { theme: "frontend" as ThemeLabel, score: frontendScore },
-      { theme: "backend" as ThemeLabel, score: backendScore },
-      { theme: "ai" as ThemeLabel, score: aiScore },
-      { theme: "devops" as ThemeLabel, score: devopsScore },
-    ]
+      const themeName = response.choices[0]?.message?.content?.trim() || "その他"
+      clusterThemes.set(clusterId, themeName)
 
-    const maxScore = Math.max(...scores.map((s) => s.score))
-    const theme =
-      maxScore > 0
-        ? scores.find((s) => s.score === maxScore)!.theme
-        : ("other" as ThemeLabel)
-
-    clusterThemes.set(clusterId, theme)
+      console.log(`[clustering] Cluster ${clusterId} theme: ${themeName}`)
+    } catch (error) {
+      console.error(`[clustering] Failed to generate theme for cluster ${clusterId}:`, error)
+      clusterThemes.set(clusterId, "その他")
+    }
   }
 
   // 各要約にテーマを割り当て
   for (let i = 0; i < clusters.length; i++) {
     const clusterId = clusters[i]
-    const theme = clusterThemes.get(clusterId) || "other"
+    const theme = clusterThemes.get(clusterId) || "その他"
     themeMap.set(summaries[i].id, theme)
   }
 

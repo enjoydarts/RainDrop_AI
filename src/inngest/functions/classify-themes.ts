@@ -2,7 +2,7 @@ import { inngest } from "../client"
 import { db } from "@/db"
 import { summaries } from "@/db/schema"
 import { eq, and, isNotNull, sql } from "drizzle-orm"
-import { kmeans, assignThemeLabels, type ThemeLabel } from "@/lib/clustering"
+import { kmeans, assignThemeLabels } from "@/lib/clustering"
 import { NonRetriableError } from "inngest"
 
 /**
@@ -60,7 +60,7 @@ export const classifyThemes = inngest.createFunction(
       "kmeans-clustering",
       async (): Promise<{
         clusters: number[]
-        themeEntries: Array<[string, ThemeLabel]>
+        themeEntries: Array<[string, string]>
       }> => {
         const vectors = summariesWithEmbedding.map((s) => s.embedding as number[])
         const k = Math.min(5, Math.max(2, Math.floor(vectors.length / 10))) // 動的にクラスタ数を決定
@@ -71,12 +71,12 @@ export const classifyThemes = inngest.createFunction(
 
         const clusterAssignments = kmeans(vectors, k)
 
-        // テーマラベルを割り当て
+        // LLMでテーマラベルを動的に生成
         const summaryData = summariesWithEmbedding.map((s) => ({
           id: s.id,
           summary: s.summary,
         }))
-        const themes = assignThemeLabels(clusterAssignments, summaryData)
+        const themes = await assignThemeLabels(clusterAssignments, summaryData)
 
         // MapをArray形式に変換（Inngestはシリアライズ可能な形式が必要）
         return {
@@ -86,7 +86,7 @@ export const classifyThemes = inngest.createFunction(
       }
     )
 
-    const themeMap = new Map<string, ThemeLabel>(result.themeEntries)
+    const themeMap = new Map<string, string>(result.themeEntries)
     const clusters: number[] = result.clusters
 
     // DBを更新
