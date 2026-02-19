@@ -8,6 +8,7 @@ import { FileText, ArrowRight } from "lucide-react"
 import { Card } from "@/components/ui/card"
 import { Button } from "@/components/ui/button"
 import { RefreshButton } from "@/components/RefreshButton"
+import { ClassifyThemesButton } from "@/components/ClassifyThemesButton"
 import { SearchableList } from "./searchable-list"
 import { SemanticSearch } from "@/components/SemanticSearch"
 
@@ -58,7 +59,8 @@ export default async function SummariesPage() {
           <h1 className="text-3xl font-bold tracking-tight text-slate-900">要約一覧</h1>
           <p className="mt-2 text-sm text-slate-600">{items.length}件の要約</p>
         </div>
-        <div className="mt-4 sm:mt-0 sm:ml-4">
+        <div className="mt-4 sm:mt-0 sm:ml-4 flex gap-2">
+          <ClassifyThemesButton />
           <RefreshButton />
         </div>
       </div>
