@@ -29,6 +29,34 @@
       "when": 1770972000000,
       "tag": "0003_add_notifications_table",
       "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1770973000000,
+      "tag": "0004_add_summaries_embedding",
+      "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1770974000000,
+      "tag": "0005_enable_pgvector",
+      "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1770975000000,
+      "tag": "0006_convert_embedding_to_vector",
+      "breakpoints": true
+    },
+    {
+      "idx": 7,
+      "version": "7",
+      "when": 1770976000000,
+      "tag": "0007_add_summaries_theme",
+      "breakpoints": true
     }
   ]
 }
