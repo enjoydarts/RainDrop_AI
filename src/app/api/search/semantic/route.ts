@@ -2,8 +2,8 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { db } from "@/db"
 import { summaries, raindrops } from "@/db/schema"
-import { eq, and, sql, desc } from "drizzle-orm"
-import { generateEmbedding } from "@/lib/embeddings"
+import { eq, and, sql, desc, isNotNull } from "drizzle-orm"
+import { generateEmbedding, cosineSimilarity } from "@/lib/embeddings"
 
 /**
  * ベクトル検索（意味検索）API

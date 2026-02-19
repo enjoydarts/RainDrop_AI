@@ -78,8 +78,13 @@ export function AblyNotifications({ userId }: AblyNotificationsProps) {
 
     // クリーンアップ
     return () => {
-      channel.unsubscribe()
-      ably.close()
+      try {
+        channel.unsubscribe()
+        ably.close()
+      } catch (error) {
+        // Ably接続エラーを無視（開発環境でよく発生）
+        console.debug("[ably] Connection cleanup error:", error)
+      }
     }
   }, [userId])
 
