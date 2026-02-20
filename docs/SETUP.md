@@ -6,7 +6,7 @@
 
 1. [事前準備](#事前準備)
 2. [Raindrop.io アプリの作成](#raindropioアプリの作成)
-3. [Anthropic APIキーの取得](#anthropic-apiキーの取得)
+3. [AI APIキーの準備（任意）](#ai-apiキーの準備任意)
 4. [環境変数の設定](#環境変数の設定)
 5. [Docker Composeでの起動](#docker-composeでの起動)
 6. [動作確認](#動作確認)
@@ -28,8 +28,10 @@
    - OAuth認証で使用
 
 2. **Anthropic**: https://console.anthropic.com/
-   - Claude APIの利用に必要
-   - クレジットカード登録が必要（従量課金）
+   - 要約・ダイジェスト生成で利用（任意）
+
+3. **OpenAI**: https://platform.openai.com/
+   - 埋め込み・意味検索・テーマ分類で利用（任意）
 
 ## Raindrop.io アプリの作成
 
@@ -60,29 +62,13 @@ https://raindrop.io/app/settings/integrations にアクセスします。
 
 ⚠️ **重要**: Client Secretは一度しか表示されないので、必ず保存してください。
 
-## Anthropic APIキーの取得
+## AI APIキーの準備（任意）
 
-### 1. Anthropic Consoleにログイン
+Anthropic / OpenAI のAPIキーは `.env.local` ではなく、ログイン後の `/settings` 画面でユーザーごとに登録します。
 
-https://console.anthropic.com/ にアクセスしてログインします。
-
-### 2. APIキーを作成
-
-1. 左メニューから「API Keys」を選択
-2. 「Create Key」ボタンをクリック
-3. キー名を入力（例: `raindary-local`）
-4. 「Create Key」をクリック
-
-### 3. APIキーをコピー
-
-表示されたAPIキー（`sk-ant-`で始まる文字列）をコピーします。
-
-⚠️ **重要**: APIキーは一度しか表示されないので、必ず保存してください。
-
-### 4. クレジット残高を確認
-
-- 初回は$5の無料クレジットが付与されます
-- 使い切った場合はクレジットカードを登録してチャージしてください
+必要な場合は事前に以下を取得してください:
+- Anthropic API Key (`sk-ant-...`)
+- OpenAI API Key (`sk-...`)
 
 ## 環境変数の設定
 
@@ -133,9 +119,6 @@ INNGEST_BASE_URL=http://inngest:8288
 
 # Extract Service
 EXTRACT_API_URL=http://extract:8000/extract
-
-# Anthropic Claude（手順で取得した値）
-ANTHROPIC_API_KEY=<sk-ant-で始まるAPIキー>
 
 # Token Encryption（手順2で生成した値）
 ENCRYPTION_KEY=<openssl rand -hex 32の出力>
@@ -236,7 +219,13 @@ raindary-web-1       Up
 2. Raindrop.ioの認証画面で「Allow」をクリック
 3. ダッシュボードにリダイレクトされればOK
 
-### 4. 記事の取り込みテスト
+### 4. APIキー登録（任意）
+
+1. `/settings` にアクセス
+2. `Anthropic API Key` と `OpenAI API Key` を必要に応じて入力
+3. 「保存」をクリック
+
+### 5. 記事の取り込みテスト
 
 1. ダッシュボードから「記事一覧」に移動
 2. 「今すぐ取り込む」ボタンをクリック

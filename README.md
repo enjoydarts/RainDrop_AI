@@ -4,8 +4,8 @@ Raindrop.ioに保存した記事を自動で取り込み、AI要約で「読ん�
 
 ## 概要
 
-技術記事を大量に保存するが読み切れないエンジニアのための、Claude APIを使った自動要約システム。
-複数のトーン（neutral、snarky、enthusiastic、casual）で要約を生成し、コストも可視化します。
+技術記事を大量に保存するが読み切れないエンジニアのための、AI要約システム。
+複数トーン要約・ジョブ管理・テーマ分類・意味検索・統計分析を一体で提供します。
 
 ## 技術スタック
 
@@ -42,15 +42,22 @@ Raindrop.ioに保存した記事を自動で取り込み、AI要約で「読ん�
 - **AI要約生成**: Claude API（Sonnet 4.5）による高品質な記事要約
 - **複数のトーン**: neutral（客観的）、snarky（毒舌）、enthusiastic（熱量高め）、casual（カジュアル）の4種類
 - **2段階AI処理**: 記事抽出 → 事実抽出 → 要約生成の効率的なパイプライン
+- **ジョブ管理**: `summary_jobs` テーブルで要約処理履歴を独立管理
+- **テーマ分類**: 既存ワークフローによる自動分類（要約完了時に自動実行）
 - **コスト追跡**: API使用料を自動計算・統計ダッシュボードで可視化
 
 ### ユーザー体験
 
 - **検索機能**: 記事タイトル、要約内容、トーンでリアルタイム検索
+- **意味検索**: OpenAI埋め込みによるセマンティック検索と関連記事提案
 - **コレクションフィルター**: Raindrop.ioのコレクション別に記事を整理・絞り込み
-- **統計ダッシュボード**: 記事数、要約数、月間コスト、トーン分布を可視化
+- **統計ダッシュボード**: 30日推移・期間比較・予算進捗・月末予測を可視化
+- **テーマ管理**: テーマの一覧、改名、削除、再分類
+- **通知センター**: リアルタイム通知、既読管理、一括操作
+- **ダイジェスト**: 週次の読書トレンドを自動生成
 - **共有機能**: 要約を公開URLで外部共有（公開/非公開切り替え可能）
 - **要約詳細ページ**: 自分の要約を詳しく閲覧（公開状態も確認可能）
+- **アカウント設定**: ユーザー単位のAnthropic/OpenAI APIキーを暗号化保存
 
 ### 開発者体験
 
@@ -80,11 +87,15 @@ Raindrop.ioに保存した記事を自動で取り込み、AI要約で「読ん�
 │  - raindrop-import                  │
 │  - raindrop-extract                 │
 │  - raindrop-summarize               │
+│  - classify-themes                  │
+│  - cleanup-job-history (JST 02:00)  │
+│  - generate-weekly-digest           │
+│  - regenerate-embeddings            │
 └──────┬──────────────────────────────┘
        │
        ├─────→ PostgreSQL (db container)
        │       - ユーザーデータ
-       │       - 記事・要約データ
+       │       - 記事・要約・ジョブ履歴
        │       - API使用量
        │
        ├─────→ Extract Service (extract container)
@@ -109,7 +120,7 @@ cp .env.local.example .env.local
 # - AUTH_SECRET: openssl rand -hex 32
 # - ENCRYPTION_KEY: openssl rand -hex 32
 # - AUTH_RAINDROP_ID/SECRET: Raindrop.io App Management
-# - ANTHROPIC_API_KEY: Anthropic Console
+# - APIキーはログイン後 /settings でユーザーごとに設定
 
 # 2. Docker Composeで起動
 docker compose up --build
@@ -148,7 +159,12 @@ docker compose exec web npm run db:migrate
 - 「要約一覧」から生成された要約を確認
 - トーン、評価、コストなどの情報も表示されます
 
-### 4. Inngest Dev Serverで進捗確認
+### 4. APIキーと予算を設定（任意）
+
+- `/settings` でAnthropic/OpenAI APIキーをユーザー単位で登録
+- 月次予算、既定トーン、既定同期コレクション、通知設定を更新
+
+### 5. Inngest Dev Serverで進捗確認
 
 - http://localhost:8288 にアクセス
 - 実行中・完了したジョブの状態を確認できます
@@ -161,8 +177,6 @@ RainDrop_AI/
 │   ├── SETUP.md                  # セットアップガイド
 │   ├── DEPLOYMENT.md             # デプロイガイド
 │   └── データベース設計.md        # DB設計ドキュメント
-├── drizzle/                       # データベースマイグレーション
-│   └── migrations/
 ├── services/                      # バックエンドサービス
 │   └── extract/                  # Python記事抽出サービス
 │       ├── Dockerfile
@@ -179,7 +193,12 @@ RainDrop_AI/
 │   │   │   ├── dashboard/        # ダッシュボード
 │   │   │   ├── raindrops/        # 記事一覧
 │   │   │   ├── summaries/        # 要約一覧・詳細
-│   │   │   └── stats/            # 統計ダッシュボード
+│   │   │   ├── jobs/             # ジョブ管理
+│   │   │   ├── stats/            # 統計ダッシュボード
+│   │   │   ├── themes/           # テーマ管理
+│   │   │   ├── notifications/    # 通知センター
+│   │   │   ├── digests/          # 週次ダイジェスト
+│   │   │   └── settings/         # アカウント設定
 │   │   ├── share/[id]/           # 公開共有ページ
 │   │   ├── api/                  # APIルート
 │   │   │   ├── health/          # ヘルスチェック
@@ -193,14 +212,18 @@ RainDrop_AI/
 │   ├── inngest/                  # Inngest関数
 │   │   ├── client.ts
 │   │   └── functions/
-│   │       ├── raindrop-import.ts    # 記事取り込み
-│   │       ├── raindrop-extract.ts   # 記事抽出
-│   │       └── raindrop-summarize.ts # 要約生成
+│   │       ├── raindrop-import.ts        # 記事取り込み
+│   │       ├── raindrop-extract.ts       # 記事抽出
+│   │       ├── raindrop-summarize.ts     # 要約生成
+│   │       ├── classify-themes.ts        # テーマ分類
+│   │       ├── cleanup-job-history.ts    # ジョブ履歴クリーンアップ
+│   │       ├── generate-digest.ts        # 週次ダイジェスト
+│   │       └── regenerate-embeddings.ts  # 埋め込み再生成
 │   └── lib/                      # ユーティリティ
 │       ├── anthropic.ts          # Claude API client
 │       ├── crypto.ts             # トークン暗号化
 │       ├── raindrop-api.ts       # Raindrop.io API client
-│       └── cost-tracking.ts      # コスト計算
+│       └── cost-tracker.ts       # コスト計算
 ├── auth.ts                       # Auth.js設定
 ├── docker-compose.yml            # Docker Compose設定
 ├── Dockerfile                    # Webアプリコンテナ
@@ -282,7 +305,7 @@ docker compose exec web npm run test:watch
 | `src/lib/anthropic.ts`    | 28%        | トークン推定（sendJsonMessageは統合テスト） |
 | `src/inngest/prompts/`    | 100%       | プロンプト生成ロジック                      |
 
-**合計: 113 テスト, 全てパス**
+**合計: 125 テスト, 全てパス**
 
 ### Lint & Format
 
@@ -354,11 +377,15 @@ AUTH_RAINDROP_SECRET=<Raindrop Client Secret>
 # Database
 DATABASE_URL=postgresql://postgres:postgres@db:5432/raindary
 
-# Anthropic Claude
-ANTHROPIC_API_KEY=<sk-ant-で始まるAPIキー>
+# APIキー
+# Anthropic/OpenAI APIキーは .env ではなく /settings で登録
 
 # Token Encryption
 ENCRYPTION_KEY=<openssl rand -hex 32>
+
+# Theme Classification (optional)
+# THEME_INITIAL_MAX=100
+# THEME_INCREMENTAL_MAX=20
 ```
 
 詳細は [docs/SETUP.md](./docs/SETUP.md) を参照してください。
