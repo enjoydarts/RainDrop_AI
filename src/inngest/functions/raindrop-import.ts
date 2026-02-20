@@ -1,6 +1,6 @@
 import { inngest } from "../client"
 import { db } from "@/db"
-import { users, raindrops } from "@/db/schema"
+import { users, raindrops, summaryJobs } from "@/db/schema"
 import { eq, inArray, and } from "drizzle-orm"
 import { decrypt } from "@/lib/crypto"
 import { RaindropClient } from "@/lib/raindrop"
@@ -179,6 +179,29 @@ export const raindropImport = inngest.createFunction(
           : "neutral"
 
       for (const raindrop of newRaindropsToExtract) {
+        await db
+          .insert(summaryJobs)
+          .values({
+            userId,
+            raindropId: raindrop.id,
+            tone,
+            status: "pending",
+            error: null,
+            lastRunAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          })
+          .onConflictDoUpdate({
+            target: [summaryJobs.userId, summaryJobs.raindropId, summaryJobs.tone],
+            set: {
+              status: "pending",
+              error: null,
+              lastRunAt: new Date(),
+              updatedAt: new Date(),
+              deletedAt: null,
+            },
+          })
+
         await inngest.send({
           name: "raindrop/item.extract.requested",
           data: {

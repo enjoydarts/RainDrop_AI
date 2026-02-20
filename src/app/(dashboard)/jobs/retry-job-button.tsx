@@ -7,18 +7,19 @@ import { retryJob } from "./actions"
 import { toast } from "sonner"
 
 interface RetryJobButtonProps {
-  summaryId: string
+  jobId: string
+  summaryId?: string | null
   raindropId: number
   tone: string
 }
 
-export function RetryJobButton({ summaryId, raindropId, tone }: RetryJobButtonProps) {
+export function RetryJobButton({ jobId, summaryId, raindropId, tone }: RetryJobButtonProps) {
   const [loading, setLoading] = useState(false)
 
   const handleRetry = async () => {
     setLoading(true)
     try {
-      await retryJob({ summaryId, raindropId, tone })
+      await retryJob({ jobId, summaryId, raindropId, tone })
       toast.success("ジョブを再実行しました")
     } catch (error) {
       toast.error("ジョブの再実行に失敗しました")

@@ -201,6 +201,41 @@ export const summaries = pgTable(
 )
 
 /**
+ * ジョブ履歴テーブル
+ * 要約処理ジョブの状態管理（要約本体とは分離）
+ */
+export const summaryJobs = pgTable(
+  "summary_jobs",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    summaryId: uuid("summary_id").references(() => summaries.id, {
+      onDelete: "set null",
+    }),
+    raindropId: bigint("raindrop_id", { mode: "number" }).notNull(),
+    tone: text("tone").notNull(),
+    status: text("status").notNull().default("pending"), // pending/processing/completed/failed
+    error: text("error"),
+    runCount: integer("run_count").notNull().default(1),
+    lastRunAt: timestamp("last_run_at", { withTimezone: true }).defaultNow().notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).defaultNow().notNull(),
+    deletedAt: timestamp("deleted_at", { withTimezone: true }),
+  },
+  (table) => ({
+    uniqueUserRaindropTone: uniqueIndex("unique_summary_jobs_user_raindrop_tone").on(
+      table.userId,
+      table.raindropId,
+      table.tone
+    ),
+    userStatusIdx: index("idx_summary_jobs_user_status").on(table.userId, table.status),
+    userUpdatedIdx: index("idx_summary_jobs_user_updated").on(table.userId, table.updatedAt),
+  })
+)
+
+/**
  * API使用状況テーブル
  * コスト追跡のためのAPI呼び出し記録
  */
@@ -235,6 +270,7 @@ export const usersRelations = relations(users, ({ many }) => ({
   sessions: many(sessions),
   raindrops: many(raindrops),
   summaries: many(summaries),
+  summaryJobs: many(summaryJobs),
   apiUsage: many(apiUsage),
 }))
 
@@ -266,6 +302,18 @@ export const summariesRelations = relations(summaries, ({ one, many }) => ({
     references: [users.id],
   }),
   apiUsage: many(apiUsage),
+  summaryJobs: many(summaryJobs),
+}))
+
+export const summaryJobsRelations = relations(summaryJobs, ({ one }) => ({
+  user: one(users, {
+    fields: [summaryJobs.userId],
+    references: [users.id],
+  }),
+  summary: one(summaries, {
+    fields: [summaryJobs.summaryId],
+    references: [summaries.id],
+  }),
 }))
 
 export const apiUsageRelations = relations(apiUsage, ({ one }) => ({
@@ -296,6 +344,9 @@ export type NewRaindrop = typeof raindrops.$inferInsert
 
 export type Summary = typeof summaries.$inferSelect
 export type NewSummary = typeof summaries.$inferInsert
+
+export type SummaryJob = typeof summaryJobs.$inferSelect
+export type NewSummaryJob = typeof summaryJobs.$inferInsert
 
 export type ApiUsage = typeof apiUsage.$inferSelect
 export type NewApiUsage = typeof apiUsage.$inferInsert

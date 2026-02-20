@@ -6,6 +6,7 @@ import { desc, isNull } from "drizzle-orm"
 import { Bell } from "lucide-react"
 import { Badge } from "@/components/ui/badge"
 import { DeleteAllButton } from "./delete-all-button"
+import { MarkAllAsReadButton } from "./mark-all-as-read-button"
 import { NotificationList } from "./notification-list"
 
 export default async function NotificationsPage() {
@@ -56,6 +57,7 @@ export default async function NotificationsPage() {
                 {unreadCount}件未読
               </Badge>
             )}
+            {unreadCount > 0 && <MarkAllAsReadButton />}
             {notificationList.length > 0 && <DeleteAllButton />}
           </div>
         </div>

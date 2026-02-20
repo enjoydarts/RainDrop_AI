@@ -1,8 +1,8 @@
 import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { withRLS } from "@/db/rls"
-import { summaries, raindrops } from "@/db/schema"
-import { and, count, desc, eq, isNull, sql } from "drizzle-orm"
+import { summaryJobs, raindrops } from "@/db/schema"
+import { and, count, desc, eq, isNull } from "drizzle-orm"
 import { Card } from "@/components/ui/card"
 import { Briefcase } from "lucide-react"
 import { JobList } from "./job-list"
@@ -28,37 +28,41 @@ export default async function JobsPage({
   const { jobs, totalCount, statusCounts } = await withRLS(userId, async (tx) => {
     const jobs = await tx
       .select({
-        id: summaries.id,
-        raindropId: summaries.raindropId,
-        tone: summaries.tone,
-        status: summaries.status,
-        error: summaries.error,
-        updatedAt: summaries.updatedAt,
+        jobId: summaryJobs.id,
+        summaryId: summaryJobs.summaryId,
+        raindropId: summaryJobs.raindropId,
+        tone: summaryJobs.tone,
+        status: summaryJobs.status,
+        error: summaryJobs.error,
+        updatedAt: summaryJobs.updatedAt,
         title: raindrops.title,
       })
-      .from(summaries)
+      .from(summaryJobs)
       .innerJoin(
         raindrops,
-        and(eq(summaries.userId, raindrops.userId), eq(summaries.raindropId, raindrops.id))
+        and(
+          eq(summaryJobs.userId, raindrops.userId),
+          eq(summaryJobs.raindropId, raindrops.id)
+        )
       )
-      .where(isNull(summaries.deletedAt))
-      .orderBy(desc(summaries.updatedAt))
+      .where(isNull(summaryJobs.deletedAt))
+      .orderBy(desc(summaryJobs.updatedAt))
       .limit(pageSize)
       .offset(offset)
 
     const [total] = await tx
       .select({ count: count() })
-      .from(summaries)
-      .where(isNull(summaries.deletedAt))
+      .from(summaryJobs)
+      .where(isNull(summaryJobs.deletedAt))
 
     const grouped = await tx
       .select({
-        status: summaries.status,
+        status: summaryJobs.status,
         count: count(),
       })
-      .from(summaries)
-      .where(isNull(summaries.deletedAt))
-      .groupBy(summaries.status)
+      .from(summaryJobs)
+      .where(isNull(summaryJobs.deletedAt))
+      .groupBy(summaryJobs.status)
 
     const statusCounts = grouped.reduce<Record<string, number>>((acc, item) => {
       acc[item.status] = item.count
@@ -87,6 +91,9 @@ export default async function JobsPage({
             </h1>
             <p className="mt-2 text-sm text-slate-600">
               要約ジョブの状態確認・失敗ジョブの再実行ができます
+            </p>
+            <p className="mt-1 text-xs text-slate-500">
+              保持期間: 完了90日 / 失敗180日（毎日自動クリーンアップ）
             </p>
           </div>
           <RefreshButton />

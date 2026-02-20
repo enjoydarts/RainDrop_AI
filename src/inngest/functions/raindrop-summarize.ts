@@ -1,7 +1,7 @@
 import { inngest } from "../client"
 import { db } from "@/db"
-import { raindrops, summaries, users } from "@/db/schema"
-import { eq, and, desc, isNotNull } from "drizzle-orm"
+import { raindrops, summaries, summaryJobs, users } from "@/db/schema"
+import { eq, and, desc, isNotNull, isNull } from "drizzle-orm"
 import { NonRetriableError } from "inngest"
 import { sendJsonMessage, MODELS } from "@/lib/anthropic"
 import { trackAnthropicUsage } from "@/lib/cost-tracker"
@@ -42,6 +42,15 @@ export const raindropSummarize = inngest.createFunction(
               updatedAt: new Date(),
             })
             .where(eq(summaries.id, summaryId))
+
+          await db
+            .update(summaryJobs)
+            .set({
+              status: "failed",
+              error: error.message,
+              updatedAt: new Date(),
+            })
+            .where(and(eq(summaryJobs.userId, userId), eq(summaryJobs.summaryId, summaryId)))
         } else {
           // summaryIdがない場合はユーザーID+raindropID+toneで更新
           await db
@@ -56,6 +65,22 @@ export const raindropSummarize = inngest.createFunction(
                 eq(summaries.userId, userId),
                 eq(summaries.raindropId, raindropId),
                 eq(summaries.tone, tone)
+              )
+            )
+
+          await db
+            .update(summaryJobs)
+            .set({
+              status: "failed",
+              error: error.message,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(summaryJobs.userId, userId),
+                eq(summaryJobs.raindropId, raindropId),
+                eq(summaryJobs.tone, tone),
+                isNull(summaryJobs.deletedAt)
               )
             )
         }
@@ -145,6 +170,16 @@ export const raindropSummarize = inngest.createFunction(
           throw new NonRetriableError(`Summary not found: summaryId=${summaryId}`)
         }
 
+        await db
+          .update(summaryJobs)
+          .set({
+            status: "processing",
+            error: null,
+            summaryId: record.id,
+            updatedAt: new Date(),
+          })
+          .where(and(eq(summaryJobs.userId, userId), eq(summaryJobs.summaryId, record.id)))
+
         return record
       } else {
         // summaryIdがない場合は新規作成（後方互換性のため）
@@ -167,6 +202,27 @@ export const raindropSummarize = inngest.createFunction(
             },
           })
           .returning()
+
+        await db
+          .insert(summaryJobs)
+          .values({
+            userId,
+            summaryId: record.id,
+            raindropId,
+            tone: tone as Tone,
+            status: "processing",
+            error: null,
+          })
+          .onConflictDoUpdate({
+            target: [summaryJobs.userId, summaryJobs.raindropId, summaryJobs.tone],
+            set: {
+              summaryId: record.id,
+              status: "processing",
+              error: null,
+              updatedAt: new Date(),
+              deletedAt: null,
+            },
+          })
 
         return record
       }
@@ -192,6 +248,15 @@ export const raindropSummarize = inngest.createFunction(
           updatedAt: new Date(),
         })
         .where(eq(summaries.id, summary.id))
+
+      await db
+        .update(summaryJobs)
+        .set({
+          status: "failed",
+          error: `月次予算上限（$${budgetUsd.toFixed(2)}）に到達したため処理を停止しました`,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(summaryJobs.userId, userId), eq(summaryJobs.summaryId, summary.id)))
 
       await notifyUser(userId, "summary:failed", {
         raindropId,
@@ -309,6 +374,15 @@ export const raindropSummarize = inngest.createFunction(
           updatedAt: new Date(),
         })
         .where(eq(summaries.id, summary.id!))
+
+      await db
+        .update(summaryJobs)
+        .set({
+          status: "completed",
+          error: null,
+          updatedAt: new Date(),
+        })
+        .where(and(eq(summaryJobs.userId, userId), eq(summaryJobs.summaryId, summary.id!)))
     })
 
     // Ably通知を送信

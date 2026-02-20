@@ -33,45 +33,52 @@ export function KeyboardShortcuts() {
         return
       }
 
-      // g + d: ダッシュボード
+      // d: ダッシュボード
       if (e.key === "d" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault()
         router.push("/dashboard")
         return
       }
 
-      // g + r: 記事一覧
+      // r: 記事一覧
       if (e.key === "r" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault()
         router.push("/raindrops")
         return
       }
 
-      // g + s: 要約一覧
+      // s: 要約一覧
       if (e.key === "s" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault()
         router.push("/summaries")
         return
       }
 
-      // g + j: ジョブ管理
+      // j: ジョブ管理
       if (e.key === "j" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault()
         router.push("/jobs")
         return
       }
 
-      // g + n: 通知
+      // n: 通知
       if (e.key === "n" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault()
         router.push("/notifications")
         return
       }
 
-      // g + t: 統計
+      // t: 統計
       if (e.key === "t" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
         e.preventDefault()
         router.push("/stats")
+        return
+      }
+
+      // o: 設定
+      if (e.key === "o" && !e.shiftKey && !e.metaKey && !e.ctrlKey) {
+        e.preventDefault()
+        router.push("/settings")
         return
       }
 

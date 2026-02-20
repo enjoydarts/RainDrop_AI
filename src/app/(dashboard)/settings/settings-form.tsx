@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useTransition } from "react"
+import { useMemo, useState, useTransition } from "react"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { saveAccountSettings } from "./actions"
@@ -44,9 +44,35 @@ export function SettingsForm({
   const [openaiApiKey, setOpenaiApiKey] = useState("")
   const [clearAnthropicApiKey, setClearAnthropicApiKey] = useState(false)
   const [clearOpenaiApiKey, setClearOpenaiApiKey] = useState(false)
+  const [saveState, setSaveState] = useState<"idle" | "saving" | "saved" | "error">("idle")
+  const initialSnapshot = useMemo(
+    () =>
+      JSON.stringify({
+        monthlyBudgetUsd: initialBudgetUsd > 0 ? initialBudgetUsd.toString() : "",
+        defaultSummaryTone: initialTone,
+        notificationsEnabled: initialNotificationsEnabled,
+        defaultImportCollectionId: initialCollectionId ? String(initialCollectionId) : "",
+      }),
+    [initialBudgetUsd, initialCollectionId, initialNotificationsEnabled, initialTone]
+  )
+  const [lastSavedSnapshot, setLastSavedSnapshot] = useState(initialSnapshot)
   const [isPending, startTransition] = useTransition()
 
+  const currentSnapshot = JSON.stringify({
+    monthlyBudgetUsd,
+    defaultSummaryTone,
+    notificationsEnabled,
+    defaultImportCollectionId,
+  })
+  const hasUnsavedChanges =
+    currentSnapshot !== lastSavedSnapshot ||
+    anthropicApiKey.trim().length > 0 ||
+    openaiApiKey.trim().length > 0 ||
+    clearAnthropicApiKey ||
+    clearOpenaiApiKey
+
   const handleSave = () => {
+    setSaveState("saving")
     startTransition(async () => {
       try {
         await saveAccountSettings({
@@ -59,8 +85,15 @@ export function SettingsForm({
           clearAnthropicApiKey,
           clearOpenaiApiKey,
         })
+        setAnthropicApiKey("")
+        setOpenaiApiKey("")
+        setClearAnthropicApiKey(false)
+        setClearOpenaiApiKey(false)
+        setLastSavedSnapshot(currentSnapshot)
+        setSaveState("saved")
         toast.success("設定を保存しました")
       } catch (error) {
+        setSaveState("error")
         toast.error("設定の保存に失敗しました")
       }
     })
@@ -190,14 +223,23 @@ export function SettingsForm({
       </div>
 
       <div>
-        <Button
-          type="button"
-          onClick={handleSave}
-          disabled={isPending}
-          className="bg-indigo-600 hover:bg-indigo-700"
-        >
-          保存
-        </Button>
+        <div className="flex flex-wrap items-center gap-3">
+          <Button
+            type="button"
+            onClick={handleSave}
+            disabled={isPending || !hasUnsavedChanges}
+            className="bg-indigo-600 hover:bg-indigo-700"
+          >
+            保存
+          </Button>
+          <span className="text-sm text-slate-600">
+            {saveState === "saving" && "保存中..."}
+            {saveState === "saved" && "保存済み"}
+            {saveState === "error" && "保存に失敗しました"}
+            {saveState !== "saving" && hasUnsavedChanges && "未保存の変更があります"}
+            {saveState === "idle" && !hasUnsavedChanges && "変更はありません"}
+          </span>
+        </div>
       </div>
     </div>
   )

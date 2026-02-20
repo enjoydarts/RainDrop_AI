@@ -37,6 +37,7 @@ export function KeyboardShortcutsHelp() {
     { keys: ["j"], description: "ジョブ管理へ移動" },
     { keys: ["n"], description: "通知へ移動" },
     { keys: ["t"], description: "統計へ移動" },
+    { keys: ["o"], description: "設定へ移動" },
     { keys: ["?"], description: "このヘルプを表示" },
   ]
 

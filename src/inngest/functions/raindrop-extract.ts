@@ -1,7 +1,7 @@
 import { inngest } from "../client"
 import { db } from "@/db"
-import { raindrops, summaries } from "@/db/schema"
-import { eq, and } from "drizzle-orm"
+import { raindrops, summaries, summaryJobs } from "@/db/schema"
+import { eq, and, isNull } from "drizzle-orm"
 import { NonRetriableError } from "inngest"
 
 interface ExtractResponse {
@@ -27,6 +27,45 @@ export const raindropExtract = inngest.createFunction(
   { event: "raindrop/item.extract.requested" },
   async ({ event, step }) => {
     const { userId, raindropId, summaryId, tone = "neutral" } = event.data
+
+    await step.run("mark-job-processing", async () => {
+      if (summaryId) {
+        await db
+          .update(summaryJobs)
+          .set({
+            status: "processing",
+            error: null,
+            lastRunAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          })
+          .where(and(eq(summaryJobs.userId, userId), eq(summaryJobs.summaryId, summaryId)))
+        return
+      }
+
+      await db
+        .insert(summaryJobs)
+        .values({
+          userId,
+          raindropId,
+          tone: tone as "snarky" | "neutral" | "enthusiastic" | "casual",
+          status: "processing",
+          error: null,
+          lastRunAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null,
+        })
+        .onConflictDoUpdate({
+          target: [summaryJobs.userId, summaryJobs.raindropId, summaryJobs.tone],
+          set: {
+            status: "processing",
+            error: null,
+            lastRunAt: new Date(),
+            updatedAt: new Date(),
+            deletedAt: null,
+          },
+        })
+    })
 
     // Raindropを取得
     const raindrop = await step.run("fetch-raindrop", async () => {
@@ -94,6 +133,37 @@ export const raindropExtract = inngest.createFunction(
               updatedAt: new Date(),
             })
             .where(eq(summaries.id, summaryId))
+
+          await db
+            .update(summaryJobs)
+            .set({
+              status: "failed",
+              error: errorMessage,
+              updatedAt: new Date(),
+            })
+            .where(and(eq(summaryJobs.userId, userId), eq(summaryJobs.summaryId, summaryId)))
+        })
+      } else {
+        await step.run("update-job-failed", async () => {
+          const errorMessage =
+            error instanceof NonRetriableError
+              ? error.message
+              : `記事の内容を取得できませんでした: ${error instanceof Error ? error.message : String(error)}`
+          await db
+            .update(summaryJobs)
+            .set({
+              status: "failed",
+              error: errorMessage,
+              updatedAt: new Date(),
+            })
+            .where(
+              and(
+                eq(summaryJobs.userId, userId),
+                eq(summaryJobs.raindropId, raindropId),
+                eq(summaryJobs.tone, tone),
+                isNull(summaryJobs.deletedAt)
+              )
+            )
         })
       }
       // エラーを再スロー

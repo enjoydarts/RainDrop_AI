@@ -1,6 +1,7 @@
 "use client"
 
 import { useEffect, useMemo, useState } from "react"
+import Link from "next/link"
 import {
   ClipboardList,
   Flame,
@@ -15,7 +16,8 @@ import { Card } from "@/components/ui/card"
 import { RetryJobButton } from "./retry-job-button"
 
 interface JobItem {
-  id: string
+  jobId: string
+  summaryId: string | null
   raindropId: number
   tone: string
   status: string
@@ -149,7 +151,7 @@ export function JobList({ jobs, statusCounts }: JobListProps) {
 
       <div className="space-y-3">
         {filteredJobs.map((job) => (
-          <Card key={job.id} className="p-4">
+          <Card key={job.jobId} className="p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 flex-1">
                 <p className="line-clamp-1 text-sm font-semibold text-slate-900">
@@ -169,7 +171,7 @@ export function JobList({ jobs, statusCounts }: JobListProps) {
                       )
                     })()}
                   </Badge>
-                  <span>ID: {job.id.slice(0, 8)}</span>
+                  <span>Job ID: {job.jobId.slice(0, 8)}</span>
                   <span>
                     更新:{" "}
                     {new Date(job.updatedAt).toLocaleString("ja-JP", {
@@ -182,11 +184,24 @@ export function JobList({ jobs, statusCounts }: JobListProps) {
                 )}
               </div>
               {job.status === "failed" && (
-                <RetryJobButton
-                  summaryId={job.id}
-                  raindropId={job.raindropId}
-                  tone={job.tone}
-                />
+                <div className="flex items-center gap-2">
+                  {job.summaryId ? (
+                    <Button asChild size="sm" variant="outline">
+                      <Link href={`/summaries/${job.summaryId}`}>要約詳細へ</Link>
+                    </Button>
+                  ) : null}
+                  <RetryJobButton
+                    jobId={job.jobId}
+                    summaryId={job.summaryId}
+                    raindropId={job.raindropId}
+                    tone={job.tone}
+                  />
+                </div>
+              )}
+              {job.status !== "failed" && job.summaryId && (
+                <Button asChild size="sm" variant="outline">
+                  <Link href={`/summaries/${job.summaryId}`}>要約詳細へ</Link>
+                </Button>
               )}
             </div>
           </Card>

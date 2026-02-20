@@ -78,7 +78,7 @@ export async function generateSummary(raindropId: number, tone: string = "neutra
 
   // summariesテーブルにレコードを作成または更新（status: pending）
   const { withRLS } = await import("@/db/rls")
-  const { summaries } = await import("@/db/schema")
+  const { summaries, summaryJobs } = await import("@/db/schema")
   const { sql } = await import("drizzle-orm")
 
   const [summary] = await withRLS(userId, async (tx) => {
@@ -104,6 +104,33 @@ export async function generateSummary(raindropId: number, tone: string = "neutra
         },
       })
       .returning()
+  })
+
+  await withRLS(userId, async (tx) => {
+    await tx
+      .insert(summaryJobs)
+      .values({
+        userId,
+        summaryId: summary.id,
+        raindropId,
+        tone: tone as "snarky" | "neutral" | "enthusiastic" | "casual",
+        status: "pending",
+        error: null,
+        lastRunAt: new Date(),
+        updatedAt: new Date(),
+        deletedAt: null,
+      })
+      .onConflictDoUpdate({
+        target: [summaryJobs.userId, summaryJobs.raindropId, summaryJobs.tone],
+        set: {
+          summaryId: summary.id,
+          status: "pending",
+          error: null,
+          lastRunAt: new Date(),
+          updatedAt: new Date(),
+          deletedAt: null,
+        },
+      })
   })
 
   console.log("[generateSummary] Created/updated summary record:", summary.id)
@@ -138,7 +165,7 @@ export async function deleteRaindrop(raindropId: number) {
 
   try {
     const { withRLS } = await import("@/db/rls")
-    const { raindrops, summaries } = await import("@/db/schema")
+    const { raindrops, summaries, summaryJobs } = await import("@/db/schema")
     const { eq } = await import("drizzle-orm")
 
     console.log("[deleteRaindrop] Deleting raindrop and summaries for user:", maskUserId(session.user.id))
@@ -160,6 +187,13 @@ export async function deleteRaindrop(raindropId: number) {
           deletedAt: new Date(),
         })
         .where(eq(summaries.raindropId, raindropId))
+
+      await tx
+        .update(summaryJobs)
+        .set({
+          deletedAt: new Date(),
+        })
+        .where(eq(summaryJobs.raindropId, raindropId))
     })
 
     console.log("[deleteRaindrop] Successfully deleted raindrop:", raindropId)
