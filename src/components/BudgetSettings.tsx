@@ -27,9 +27,9 @@ export function BudgetSettings({ initialBudgetUsd }: BudgetSettingsProps) {
   }
 
   return (
-    <div className="rounded-xl border border-slate-200 bg-white p-4 shadow-sm">
-      <h3 className="text-sm font-semibold text-slate-900">月次予算ガード</h3>
-      <p className="mt-1 text-xs text-slate-500">
+    <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 shadow-sm">
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">月次予算ガード</h3>
+      <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
         0 または空欄で無効化できます
       </p>
       <div className="mt-3 flex items-center gap-2">
