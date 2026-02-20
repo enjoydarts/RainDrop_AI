@@ -37,6 +37,73 @@ function formatDateJst(date: Date): string {
   }).format(date)
 }
 
+async function generateDigestMarkdown({
+  client,
+  prompt,
+  logger,
+}: {
+  client: Anthropic
+  prompt: string
+  logger: any
+}) {
+  const DIGEST_MODEL = "claude-sonnet-4-6"
+  const maxAttempts = 3
+  let accumulatedText = ""
+  let totalInputTokens = 0
+  let totalOutputTokens = 0
+  let currentPrompt = prompt
+
+  for (let attempt = 1; attempt <= maxAttempts; attempt += 1) {
+    const message = await client.messages.create({
+      model: DIGEST_MODEL,
+      max_tokens: 2048,
+      messages: [{ role: "user", content: currentPrompt }],
+    })
+
+    totalInputTokens += message.usage.input_tokens
+    totalOutputTokens += message.usage.output_tokens
+
+    const chunk = message.content
+      .filter((part) => part.type === "text")
+      .map((part) => part.text)
+      .join("\n")
+      .trim()
+
+    if (!chunk) {
+      throw new Error("Digest response is empty")
+    }
+
+    accumulatedText = accumulatedText ? `${accumulatedText}\n\n${chunk}` : chunk
+
+    if (message.stop_reason !== "max_tokens") {
+      return {
+        text: accumulatedText,
+        inputTokens: totalInputTokens,
+        outputTokens: totalOutputTokens,
+        model: DIGEST_MODEL,
+      }
+    }
+
+    logger.warn("Digest generation reached max_tokens; requesting continuation", {
+      attempt,
+      maxAttempts,
+    })
+
+    currentPrompt = `以下はあなたが作成中の週次ダイジェストです。続きのみを出力してください。
+既に出力済みの文章は絶対に繰り返さず、残りの未出力部分だけをMarkdown形式で返してください。
+
+--- ここまでの出力 ---
+${accumulatedText}`
+  }
+
+  return {
+    text: accumulatedText,
+    inputTokens: totalInputTokens,
+    outputTokens: totalOutputTokens,
+    model: DIGEST_MODEL,
+  }
+}
+
 async function runWeeklyDigest({
   step,
   logger,
@@ -185,23 +252,14 @@ ${summaryTexts}
 （今週の読書傾向から、来週読むとよい分野や視点の提案を2〜3文）`
 
       const client = new Anthropic({ apiKey })
-      const message = await client.messages.create({
-        model: "claude-haiku-4-5",
-        max_tokens: 1024,
-        messages: [{ role: "user", content: prompt }],
-      })
-
-      const content = message.content[0]
-      if (content.type !== "text") {
-        return { userId, skipped: true, reason: "unexpected_response" }
-      }
+      const digestResult = await generateDigestMarkdown({ client, prompt, logger })
 
       // コストトラッキング
       await trackAnthropicUsage({
         userId,
-        model: "claude-haiku-4-5",
-        inputTokens: message.usage.input_tokens,
-        outputTokens: message.usage.output_tokens,
+        model: digestResult.model,
+        inputTokens: digestResult.inputTokens,
+        outputTokens: digestResult.outputTokens,
       }).catch((err) => logger.warn("Failed to track digest cost", { err }))
 
       // ダイジェストを保存
@@ -212,14 +270,14 @@ ${summaryTexts}
           period: "weekly",
           periodStart,
           periodEnd,
-          content: content.text,
+          content: digestResult.text,
           summaryCount: weeklySummaries.length,
           topThemes,
         })
         .onConflictDoUpdate({
           target: [digests.userId, digests.period, digests.periodStart, digests.periodEnd],
           set: {
-            content: content.text,
+            content: digestResult.text,
             summaryCount: weeklySummaries.length,
             topThemes,
             createdAt: new Date(),
