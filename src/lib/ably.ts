@@ -63,6 +63,18 @@ function getNotificationContent(eventName: string, data: Record<string, any>) {
         title: "テーマ分類に失敗しました",
         description: data.error || "エラーが発生しました",
       }
+    case "embeddings:completed":
+      return {
+        title: "エンベディング生成が完了しました",
+        description: data.processed > 0
+          ? `${data.processed}件のエンベディングを生成しました。意味検索・関連記事機能が利用できます。${data.failed > 0 ? `（失敗: ${data.failed}件）` : ""}`
+          : "生成対象の要約がありませんでした。",
+      }
+    case "embeddings:failed":
+      return {
+        title: "エンベディング生成に失敗しました",
+        description: data.error || "エラーが発生しました",
+      }
     default:
       return {
         title: "通知",

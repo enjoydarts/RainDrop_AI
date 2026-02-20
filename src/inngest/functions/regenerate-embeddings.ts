@@ -132,3 +132,22 @@ export const regenerateEmbeddings = inngest.createFunction(
     }
   }
 )
+
+// NonRetriableError は上のスコープで catch できないため、
+// Inngest の onFailure フックでエラー通知を送る
+export const regenerateEmbeddingsFailure = inngest.createFunction(
+  { id: "regenerate-embeddings-failure" },
+  { event: "inngest/function.failed" },
+  async ({ event, step }) => {
+    if (event.data.function_id !== "regenerate-embeddings") return
+
+    const userId = event.data.event?.data?.userId
+    if (!userId) return
+
+    await step.run("notify-failure", async () => {
+      await notifyUser(userId, "embeddings:failed", {
+        error: event.data.error?.message || "エラーが発生しました",
+      })
+    })
+  }
+)
