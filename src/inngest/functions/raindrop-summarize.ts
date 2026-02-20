@@ -385,6 +385,17 @@ export const raindropSummarize = inngest.createFunction(
         .where(and(eq(summaryJobs.userId, userId), eq(summaryJobs.summaryId, summary.id!)))
     })
 
+    // 既存のテーマ分類ワークフローを自動起動
+    await step.run("trigger-theme-classification", async () => {
+      await inngest.send({
+        name: "summaries/classify-themes.requested",
+        data: {
+          userId,
+          force: false,
+        },
+      })
+    })
+
     // Ably通知を送信
     await step.run("notify-user", async () => {
       await notifyUser(userId, "summary:completed", {
