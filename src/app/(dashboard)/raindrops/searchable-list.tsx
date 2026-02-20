@@ -112,7 +112,7 @@ export function SearchableList({ items, collectionMap = new Map(), summaryCountM
     }
 
     return result
-  }, [items, searchQuery, selectedCollection])
+  }, [items, searchQuery, selectedCollection, selectedTag])
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
@@ -278,11 +278,14 @@ export function SearchableList({ items, collectionMap = new Map(), summaryCountM
                   ) : null}
 
                   {/* アクションボタン */}
-                  <div className="flex items-center gap-2">
+                  <div className="flex flex-wrap items-center gap-2">
                     <SummaryButton raindropId={item.id} />
                     <DeleteButton raindropId={item.id} articleTitle={item.title} />
                     {(summaryCountMap.get(item.id) ?? 0) > 0 && (
-                      <Badge variant="outline" className="text-xs ml-auto text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/50">
+                      <Badge
+                        variant="outline"
+                        className="ml-auto shrink-0 whitespace-nowrap text-xs text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/50"
+                      >
                         {summaryCountMap.get(item.id)}トーン
                       </Badge>
                     )}

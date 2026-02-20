@@ -3,7 +3,7 @@ import { db } from "@/db"
 import { raindrops, summaries, summaryJobs, users } from "@/db/schema"
 import { eq, and, desc, isNotNull, isNull } from "drizzle-orm"
 import { NonRetriableError } from "inngest"
-import { sendJsonMessage, MODELS } from "@/lib/anthropic"
+import { sendJsonMessage, MODELS, type ModelType } from "@/lib/anthropic"
 import { trackAnthropicUsage } from "@/lib/cost-tracker"
 import { getMonthlyBudgetUsd, getMonthlyCostUsd } from "@/lib/cost-tracker"
 import { buildExtractFactsPrompt, ExtractedFacts } from "../prompts/extract-facts"
@@ -105,6 +105,8 @@ export const raindropSummarize = inngest.createFunction(
         .select({
           anthropicApiKeyEncrypted: users.anthropicApiKeyEncrypted,
           openaiApiKeyEncrypted: users.openaiApiKeyEncrypted,
+          factsExtractionModel: users.factsExtractionModel,
+          summaryGenerationModel: users.summaryGenerationModel,
         })
         .from(users)
         .where(eq(users.id, userId))
@@ -125,6 +127,10 @@ export const raindropSummarize = inngest.createFunction(
         openaiApiKey: user.openaiApiKeyEncrypted
           ? decrypt(user.openaiApiKeyEncrypted)
           : undefined,
+        factsExtractionModel:
+          (user.factsExtractionModel as ModelType) || MODELS.HAIKU,
+        summaryGenerationModel:
+          (user.summaryGenerationModel as ModelType) || MODELS.SONNET,
       }
     })
 
@@ -160,7 +166,7 @@ export const raindropSummarize = inngest.createFunction(
           .set({
             status: "processing",
             error: null,
-            model: MODELS.SONNET,
+            model: apiKeys.summaryGenerationModel,
             updatedAt: new Date(),
           })
           .where(eq(summaries.id, summaryId))
@@ -190,7 +196,7 @@ export const raindropSummarize = inngest.createFunction(
             raindropId,
             tone: tone as Tone,
             summary: "", // 一旦空で作成
-            model: MODELS.SONNET,
+            model: apiKeys.summaryGenerationModel,
             status: "processing",
           })
           .onConflictDoUpdate({
@@ -273,7 +279,7 @@ export const raindropSummarize = inngest.createFunction(
 
       const response = await sendJsonMessage<ExtractedFacts>({
         apiKey: apiKeys.anthropicApiKey,
-        model: MODELS.HAIKU,
+        model: apiKeys.factsExtractionModel,
         system,
         messages: [{ role: "user", content: userMessage }],
         maxTokens: 1024,
@@ -283,7 +289,7 @@ export const raindropSummarize = inngest.createFunction(
       await trackAnthropicUsage({
         userId,
         summaryId: summary.id!,
-        model: MODELS.HAIKU,
+        model: apiKeys.factsExtractionModel,
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
       })
@@ -325,7 +331,7 @@ export const raindropSummarize = inngest.createFunction(
 
       const response = await sendJsonMessage<GeneratedSummary>({
         apiKey: apiKeys.anthropicApiKey,
-        model: MODELS.SONNET,
+        model: apiKeys.summaryGenerationModel,
         system,
         messages: [{ role: "user", content: userMessage }],
         maxTokens: 2048,
@@ -335,7 +341,7 @@ export const raindropSummarize = inngest.createFunction(
       await trackAnthropicUsage({
         userId,
         summaryId: summary.id!,
-        model: MODELS.SONNET,
+        model: apiKeys.summaryGenerationModel,
         inputTokens: response.usage.input_tokens,
         outputTokens: response.usage.output_tokens,
       })

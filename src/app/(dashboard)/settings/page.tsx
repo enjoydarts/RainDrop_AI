@@ -25,6 +25,8 @@ export default async function SettingsPage() {
         defaultImportCollectionId: users.defaultImportCollectionId,
         hasAnthropicApiKey: users.anthropicApiKeyEncrypted,
         hasOpenaiApiKey: users.openaiApiKeyEncrypted,
+        factsExtractionModel: users.factsExtractionModel,
+        summaryGenerationModel: users.summaryGenerationModel,
         raindropAccessToken: users.raindropAccessToken,
       })
       .from(users)
@@ -77,6 +79,8 @@ export default async function SettingsPage() {
         initialCollectionId={userSettings.defaultImportCollectionId || null}
         hasAnthropicApiKey={Boolean(userSettings.hasAnthropicApiKey)}
         hasOpenaiApiKey={Boolean(userSettings.hasOpenaiApiKey)}
+        initialFactsExtractionModel={userSettings.factsExtractionModel}
+        initialSummaryGenerationModel={userSettings.summaryGenerationModel}
         collections={collections}
       />
 

@@ -35,10 +35,20 @@
   - 例: `https://your-app.vercel.app/api/auth/raindrop/callback`
 - [ ] Client IDとClient Secretをメモ済み
 
-## Anthropic API
+## AI API
 
-- [ ] Anthropic API Keyを取得済み（`sk-ant-...`）
-- [ ] API使用料の上限を確認済み
+- [ ] Anthropic / OpenAI APIキーを取得済み
+- [ ] ユーザーが `/settings` から登録する運用を周知済み
+
+## Redis のセットアップ
+
+- [ ] Upstash Redisアカウント作成済み（またはマネージドRedis）
+- [ ] `REDIS_URL` を取得済み
+
+## Ably のセットアップ
+
+- [ ] Ablyアカウント作成済み
+- [ ] `ABLY_API_KEY` / `NEXT_PUBLIC_ABLY_KEY` を取得済み
 
 ## 環境変数の準備
 
@@ -62,11 +72,15 @@
 - [ ] `INNGEST_DEV=0`
 - [ ] `INNGEST_BASE_URL=https://inn.gs`
 
-### Anthropic
-- [ ] `ANTHROPIC_API_KEY` - Claude API Key
-
 ### Encryption
 - [ ] `ENCRYPTION_KEY` - 新規生成（`openssl rand -hex 32`）
+
+### Redis
+- [ ] `REDIS_URL` - Upstash Redis URL
+
+### Ably
+- [ ] `ABLY_API_KEY` - Ably API Key
+- [ ] `NEXT_PUBLIC_ABLY_KEY` - Ably Public Key
 
 ## Vercel デプロイ
 
@@ -81,6 +95,8 @@
 - [ ] ログインページが表示される
 - [ ] Raindrop.ioでログインできる
 - [ ] ダッシュボードが表示される
+- [ ] ダークモード切り替えが動作する
+- [ ] `/settings` でAPIキーが登録できる
 - [ ] ログアウトできる
 - [ ] Vercelのログにエラーがない
 

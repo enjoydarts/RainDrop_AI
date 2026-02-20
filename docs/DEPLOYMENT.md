@@ -10,13 +10,15 @@
 - **データベース**: Supabase PostgreSQL (無料)
 - **バックグラウンドジョブ**: Inngest Cloud (無料)
 - **Extract Service**: Render (無料)
+- **Redis**: Upstash Redis (無料)
+- **リアルタイム通知**: Ably (無料)
 
 ## 必要な前提条件
 
 - GitHubアカウント
-- 各サービスのアカウント（Supabase、Inngest、Render、Vercel）
+- 各サービスのアカウント（Supabase、Inngest、Render、Vercel、Upstash、Ably）
 - Raindrop.io OAuthアプリ（開発環境で作成済み）
-- Anthropic Claude API キー
+- Anthropic / OpenAI API キー（ユーザーが /settings から登録）
 
 ## デプロイ手順
 
@@ -154,14 +156,21 @@ INNGEST_SIGNING_KEY=<ステップ2.2で取得したSigning Key>
 INNGEST_DEV=0
 INNGEST_BASE_URL=https://inn.gs
 
-# Anthropic
-ANTHROPIC_API_KEY=<Claude API Key>
-
 # Encryption
 ENCRYPTION_KEY=<openssl rand -hex 32で新規生成>
 
 # Extract Service (Render)
 EXTRACT_API_URL=<ステップ3.4で取得したURL>/extract
+
+# Redis (Upstash)
+REDIS_URL=<Upstash RedisのioredisURL>
+
+# Ably (リアルタイム通知)
+ABLY_API_KEY=<Ably API Key>
+NEXT_PUBLIC_ABLY_KEY=<Ably Public Key>
+
+# AI APIキー
+# Anthropic / OpenAI APIキーはユーザーが /settings から登録
 ```
 
 **重要**: `AUTH_SECRET`と`ENCRYPTION_KEY`は本番用に新規生成してください（開発環境と別にする）：
@@ -225,10 +234,14 @@ openssl rand -hex 32
 3. 「Settings」→「Apps」→「Sync App」
 4. App URLを入力: `https://<your-app>.vercel.app/api/inngest`
 5. 「Save」→「Sync」をクリック
-6. 「Functions」タブで以下の3つの関数が表示されることを確認:
+6. 「Functions」タブで以下の関数が表示されることを確認:
    - `raindrop-import`
    - `raindrop-extract`
    - `raindrop-summarize`
+   - `classify-themes`
+   - `cleanup-job-history`
+   - `generate-weekly-digest`
+   - `regenerate-embeddings`
 
 ---
 
@@ -383,9 +396,22 @@ openssl rand -hex 32
 - **月750時間の実行時間**（複数サービスで共有）
 - **起動時間**: 30-60秒
 
+### Upstash Redis (無料)
+- **コマンド数**: 10,000/日
+- **データ容量**: 256MB
+
+### Ably (無料)
+- **メッセージ数**: 600万/月
+- **同時接続**: 200
+
 ### Anthropic Claude API (従量課金)
-- **記事1件あたりのコスト**: 約$0.02-0.05（Claude 3.5 Sonnet使用時）
-- **月100記事**: 約$2-5
+- **事実抽出**: 約$0.001/記事（Haiku 4.5）
+- **要約生成**: 約$0.003/記事（Sonnet 4.6）
+- **月100記事**: 約$0.40
+
+### OpenAI API (従量課金)
+- **エンベディング**: 約$0.00002/記事（text-embedding-3-small）
+- **テーマラベル**: 約$0.001/バッチ（GPT-4o-mini）
 
 ---
 

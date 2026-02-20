@@ -26,44 +26,55 @@ Raindrop.ioに保存した記事を自動で取り込み、AI要約で「読ん�
 ### AI/ML
 
 - **Anthropic Claude API**:
-  - Claude Sonnet 4.5: 事実抽出と要約生成（高品質）
-  - Claude Haiku 4.5: 軽量タスク用（高速・低コスト）
+  - Claude Sonnet 4.6: 要約生成（高品質 / $3.00/$15.00 per 1M tokens）
+  - Claude Opus 4.6: 高精度タスク用（$5.00/$25.00 per 1M tokens）
+  - Claude Haiku 4.5: 事実抽出（高速・低コスト / $1.00/$5.00 per 1M tokens）
+- **OpenAI API**:
+  - text-embedding-3-small: エンベディング生成（意味検索・関連記事）
+  - GPT-4o-mini: テーマ分類のラベル生成
 
 ### インフラ
 
 - **Docker & Docker Compose**: コンテナ化されたローカル開発環境
 - **Python + trafilatura**: Web記事の本文抽出
+- **Redis**: レート制限（ローカルはDocker、本番はUpstash等）
+- **Ably**: リアルタイム通知配信
 
 ## 特徴
 
 ### コア機能
 
 - **Raindrop.io連携**: OAuth認証でRaindrop.ioのブックマークを自動取り込み
-- **AI要約生成**: Claude API（Sonnet 4.5）による高品質な記事要約
+- **AI要約生成**: Claude API（Sonnet 4.6）による高品質な記事要約
 - **複数のトーン**: neutral（客観的）、snarky（毒舌）、enthusiastic（熱量高め）、casual（カジュアル）の4種類
-- **2段階AI処理**: 記事抽出 → 事実抽出 → 要約生成の効率的なパイプライン
+- **2段階AI処理**: 記事抽出 → 事実抽出（Haiku） → 要約生成（Sonnet）の効率的なパイプライン
 - **ジョブ管理**: `summary_jobs` テーブルで要約処理履歴を独立管理
-- **テーマ分類**: 既存ワークフローによる自動分類（要約完了時に自動実行）
-- **コスト追跡**: API使用料を自動計算・統計ダッシュボードで可視化
+- **テーマ分類**: OpenAI GPT-4o-mini + エンベディングによる自動分類（要約完了時に自動実行）
+- **コスト追跡**: Anthropic/OpenAI/Raindrop全APIの使用料を自動計算・統計ダッシュボードで可視化
+- **モデル選択**: ユーザーごとに事実抽出・要約生成に使用するClaudeモデルを選択可能
 
 ### ユーザー体験
 
-- **検索機能**: 記事タイトル、要約内容、トーンでリアルタイム検索
-- **意味検索**: OpenAI埋め込みによるセマンティック検索と関連記事提案
+- **キーワード検索**: 記事タイトル、要約内容、トーンでリアルタイム検索
+- **ハイブリッド意味検索**: ベクトル類似度（70%）+ キーワードマッチ（30%）による高精度検索
+- **検索履歴**: 直近の検索クエリをlocalStorageに保存、ワンクリック再検索
+- **関連記事提案**: エンベディングベースで類似記事を自動提案
 - **コレクションフィルター**: Raindrop.ioのコレクション別に記事を整理・絞り込み
 - **統計ダッシュボード**: 30日推移・期間比較・予算進捗・月末予測を可視化
 - **テーマ管理**: テーマの一覧、改名、削除、再分類
-- **通知センター**: リアルタイム通知、既読管理、一括操作
-- **ダイジェスト**: 週次の読書トレンドを自動生成
-- **共有機能**: 要約を公開URLで外部共有（公開/非公開切り替え可能）
-- **要約詳細ページ**: 自分の要約を詳しく閲覧（公開状態も確認可能）
-- **アカウント設定**: ユーザー単位のAnthropic/OpenAI APIキーを暗号化保存
+- **通知センター**: Ablyによるリアルタイム通知、既読管理、一括操作
+- **ダイジェスト**: 週次の読書トレンドをAIが自動分析・生成
+- **共有機能**: 要約を公開URLで外部共有（公開/非公開切り替え、SNSシェアボタン）
+- **ダークモード**: システム設定連動 / 手動切り替え対応（next-themes）
+- **エンベディング一括生成**: 未生成の要約に対してバックグラウンドでバッチ処理
+- **アカウント設定**: ユーザー単位のAnthropic/OpenAI APIキーを暗号化保存、使用モデル選択
+- **レート制限**: Redis + rate-limiter-flexible によるAPIリクエスト制限
 
 ### 開発者体験
 
 - **非同期処理**: Inngestによるバックグラウンド処理で快適なUX
-- **マルチユーザー対応**: 各ユーザーのデータを安全に分離
-- **完全Docker化**: ローカル開発環境を簡単セットアップ
+- **マルチユーザー対応**: RLS（Row Level Security）による安全なデータ分離
+- **完全Docker化**: Web / DB / Redis / Extract / Inngest を一括起動
 - **監視機能**: ヘルスチェックエンドポイント、Vercel Speed Insights & Analytics統合
 
 ## アーキテクチャ
@@ -93,18 +104,26 @@ Raindrop.ioに保存した記事を自動で取り込み、AI要約で「読ん�
 │  - regenerate-embeddings            │
 └──────┬──────────────────────────────┘
        │
-       ├─────→ PostgreSQL (db container)
+       ├─────→ PostgreSQL + pgvector (db container)
        │       - ユーザーデータ
        │       - 記事・要約・ジョブ履歴
-       │       - API使用量
+       │       - エンベディング (vector 1536)
+       │       - API使用量・通知・ダイジェスト
+       │
+       ├─────→ Redis (redis container)
+       │       - レート制限
        │
        ├─────→ Extract Service (extract container)
        │       - Python + trafilatura
        │       - 記事本文抽出
        │
-       └─────→ Anthropic Claude API
-               - Haiku: 事実抽出
-               - Sonnet: 要約生成
+       ├─────→ Anthropic Claude API
+       │       - Haiku 4.5: 事実抽出
+       │       - Sonnet 4.6: 要約生成
+       │
+       └─────→ OpenAI API
+               - text-embedding-3-small: エンベディング
+               - GPT-4o-mini: テーマラベル生成
 ```
 
 ## セットアップ
@@ -115,7 +134,7 @@ Raindrop.ioに保存した記事を自動で取り込み、AI要約で「読ん�
 
 ```bash
 # 1. 環境変数を設定
-cp .env.local.example .env.local
+cp .env.example .env.local
 # .env.localを編集して以下を設定:
 # - AUTH_SECRET: openssl rand -hex 32
 # - ENCRYPTION_KEY: openssl rand -hex 32
@@ -138,6 +157,7 @@ docker compose exec web npm run db:migrate
 - **Inngest Dev Server**: http://localhost:8288
 - **Extract API**: http://localhost:8000
 - **PostgreSQL**: localhost:5432
+- **Redis**: localhost:6379
 
 ## 使い方
 
@@ -202,7 +222,12 @@ RainDrop_AI/
 │   │   ├── share/[id]/           # 公開共有ページ
 │   │   ├── api/                  # APIルート
 │   │   │   ├── health/          # ヘルスチェック
-│   │   │   └── inngest/         # Inngest webhook
+│   │   │   ├── inngest/         # Inngest webhook
+│   │   │   ├── search/          # 意味検索・関連記事
+│   │   │   ├── embeddings/      # エンベディング一括生成
+│   │   │   ├── themes/          # テーマAPI
+│   │   │   ├── export/          # エクスポート
+│   │   │   └── notifications/   # 通知API
 │   │   ├── icon.png              # Favicon
 │   │   └── layout.tsx            # ルートレイアウト
 │   ├── db/                       # データベース設定
@@ -219,11 +244,21 @@ RainDrop_AI/
 │   │       ├── cleanup-job-history.ts    # ジョブ履歴クリーンアップ
 │   │       ├── generate-digest.ts        # 週次ダイジェスト
 │   │       └── regenerate-embeddings.ts  # 埋め込み再生成
+│   ├── components/               # 共通コンポーネント
+│   │   ├── SemanticSearch.tsx    # ハイブリッド意味検索
+│   │   ├── RelatedSummaries.tsx  # 関連記事提案
+│   │   ├── RegenerateEmbeddingsButton.tsx # エンベディング一括生成
+│   │   ├── ExportButton.tsx      # エクスポート
+│   │   └── ThemeProvider.tsx     # ダークモード
 │   └── lib/                      # ユーティリティ
 │       ├── anthropic.ts          # Claude API client
+│       ├── embeddings.ts         # OpenAI Embeddings
+│       ├── clustering.ts         # テーマ分類（クラスタリング）
 │       ├── crypto.ts             # トークン暗号化
 │       ├── raindrop-api.ts       # Raindrop.io API client
-│       └── cost-tracker.ts       # コスト計算
+│       ├── cost-tracker.ts       # コスト計算（Anthropic/OpenAI）
+│       ├── rate-limit.ts         # Redis レート制限
+│       └── ably.ts               # リアルタイム通知
 ├── auth.ts                       # Auth.js設定
 ├── docker-compose.yml            # Docker Compose設定
 ├── Dockerfile                    # Webアプリコンテナ
@@ -356,11 +391,14 @@ docker compose logs -f extract
 
 # Inngest
 docker compose logs -f inngest
+
+# Redis
+docker compose logs -f redis
 ```
 
 ## 環境変数
 
-`.env.local`に設定が必要な主な環境変数:
+`.env.local`に設定が必要な主な環境変数（`.env.example`参照）:
 
 ```bash
 # Next.js
@@ -374,18 +412,30 @@ AUTH_SECRET=<openssl rand -hex 32>
 AUTH_RAINDROP_ID=<Raindrop Client ID>
 AUTH_RAINDROP_SECRET=<Raindrop Client Secret>
 
-# Database
+# Database (docker-compose の db コンテナ)
 DATABASE_URL=postgresql://postgres:postgres@db:5432/raindary
 
-# APIキー
-# Anthropic/OpenAI APIキーは .env ではなく /settings で登録
+# Inngest (docker-compose の inngest コンテナ)
+INNGEST_EVENT_KEY=local_dev_key
+INNGEST_SIGNING_KEY=local_signing_key
+INNGEST_DEV=1
+INNGEST_BASE_URL=http://inngest:8288
+
+# Extract Service
+EXTRACT_API_URL=http://extract:8000/extract
 
 # Token Encryption
 ENCRYPTION_KEY=<openssl rand -hex 32>
 
-# Theme Classification (optional)
-# THEME_INITIAL_MAX=100
-# THEME_INCREMENTAL_MAX=20
+# Redis (docker-compose の redis コンテナ)
+REDIS_URL=redis://redis:6379
+
+# Ably (リアルタイム通知)
+ABLY_API_KEY=<Ably API Key>
+NEXT_PUBLIC_ABLY_KEY=<Ably Public Key>
+
+# AI APIキー
+# Anthropic / OpenAI APIキーは .env ではなく /settings でユーザー単位に登録
 ```
 
 詳細は [docs/SETUP.md](./docs/SETUP.md) を参照してください。

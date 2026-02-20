@@ -77,7 +77,7 @@ Anthropic / OpenAI のAPIキーは `.env.local` ではなく、ログイン後�
 プロジェクトのルートディレクトリで以下のコマンドを実行:
 
 ```bash
-cp .env.local.example .env.local
+cp .env.example .env.local
 ```
 
 ### 2. 秘密鍵を生成
@@ -122,6 +122,13 @@ EXTRACT_API_URL=http://extract:8000/extract
 
 # Token Encryption（手順2で生成した値）
 ENCRYPTION_KEY=<openssl rand -hex 32の出力>
+
+# Redis (ローカル開発環境)
+REDIS_URL=redis://redis:6379
+
+# Ably (リアルタイム通知、任意)
+ABLY_API_KEY=<Ably API Key>
+NEXT_PUBLIC_ABLY_KEY=<Ably Public Key>
 ```
 
 ### 4. 設定確認
@@ -155,6 +162,7 @@ docker compose up --build
 
 ```
 raindary-db-1        | database system is ready to accept connections
+raindary-redis-1     | Ready to accept connections
 raindary-extract-1   | Uvicorn running on http://0.0.0.0:8000
 raindary-inngest-1   | Inngest dev server running
 raindary-web-1       | ✓ Ready in 3.2s
@@ -202,6 +210,7 @@ docker compose ps
 ```
 NAME                    STATUS
 raindary-db-1        Up (healthy)
+raindary-redis-1     Up (healthy)
 raindary-extract-1   Up (healthy)
 raindary-inngest-1   Up
 raindary-web-1       Up
@@ -249,6 +258,7 @@ Error: port is already allocated
 # 使用中のポートを確認
 lsof -i :3000
 lsof -i :5432
+lsof -i :6379
 lsof -i :8000
 lsof -i :8288
 

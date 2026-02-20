@@ -17,13 +17,22 @@ const TONE_LABELS = {
 type ToneKey = keyof typeof TONE_LABELS
 type ToneFilter = ToneKey | "all"
 
-function toDayKeyJst(date: Date): string {
-  return new Intl.DateTimeFormat("en-CA", {
+function getJstDateParts(date: Date): { year: number; month: number; day: number } {
+  const parts = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Tokyo",
     year: "numeric",
     month: "2-digit",
     day: "2-digit",
-  }).format(date)
+  }).formatToParts(date)
+  const year = Number(parts.find((p) => p.type === "year")?.value || "0")
+  const month = Number(parts.find((p) => p.type === "month")?.value || "0")
+  const day = Number(parts.find((p) => p.type === "day")?.value || "0")
+  return { year, month, day }
+}
+
+function toDayKeyJst(date: Date): string {
+  const { year, month, day } = getJstDateParts(date)
+  return `${year.toString().padStart(4, "0")}-${month.toString().padStart(2, "0")}-${day.toString().padStart(2, "0")}`
 }
 
 function toDayLabelJst(date: Date): string {
@@ -36,13 +45,15 @@ function toDayLabelJst(date: Date): string {
 
 function buildRecentDayBuckets(days: number): Array<{ key: string; label: string }> {
   const buckets: Array<{ key: string; label: string }> = []
-  const start = new Date()
-  start.setHours(0, 0, 0, 0)
-  start.setDate(start.getDate() - (days - 1))
+  const now = new Date()
+  const { year, month, day } = getJstDateParts(now)
+  const jstTodayAsUtcMidnight = new Date(Date.UTC(year, month - 1, day))
+  const start = new Date(jstTodayAsUtcMidnight)
+  start.setUTCDate(start.getUTCDate() - (days - 1))
 
   for (let i = 0; i < days; i++) {
     const d = new Date(start)
-    d.setDate(start.getDate() + i)
+    d.setUTCDate(start.getUTCDate() + i)
     buckets.push({
       key: toDayKeyJst(d),
       label: toDayLabelJst(d),

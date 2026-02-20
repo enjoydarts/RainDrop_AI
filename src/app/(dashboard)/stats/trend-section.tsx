@@ -61,7 +61,7 @@ function MiniBarChart({
         {data.map((item) => {
           const height = Math.max((item.value / maxValue) * 100, item.value > 0 ? 4 : 0)
           return (
-            <div key={item.label} className="group relative flex-1">
+            <div key={item.label} className="group relative flex h-full flex-1 items-end">
               <div className={`w-full rounded-sm ${colorClass}`} style={{ height: `${height}%` }} />
               <div className="pointer-events-none absolute -top-7 left-1/2 hidden -translate-x-1/2 rounded bg-slate-900 px-2 py-1 text-[10px] text-white group-hover:block">
                 {item.value.toLocaleString()}

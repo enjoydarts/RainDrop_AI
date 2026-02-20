@@ -15,7 +15,7 @@ describe("anthropic", () => {
     })
 
     it("should have SONNET model", () => {
-      expect(MODELS.SONNET).toBe("claude-sonnet-4-5")
+      expect(MODELS.SONNET).toBe("claude-sonnet-4-6")
     })
 
     it("should have correct model names", () => {

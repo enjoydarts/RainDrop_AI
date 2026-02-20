@@ -52,6 +52,12 @@ export const users = pgTable("user", {
   }),
   anthropicApiKeyEncrypted: text("anthropic_api_key_encrypted"),
   openaiApiKeyEncrypted: text("openai_api_key_encrypted"),
+  factsExtractionModel: text("facts_extraction_model")
+    .default("claude-haiku-4-5")
+    .notNull(),
+  summaryGenerationModel: text("summary_generation_model")
+    .default("claude-sonnet-4-6")
+    .notNull(),
   defaultSummaryTone: text("default_summary_tone").default("neutral").notNull(),
   notificationsEnabled: integer("notifications_enabled").default(1).notNull(), // 0: OFF, 1: ON
   defaultImportCollectionId: bigint("default_import_collection_id", { mode: "number" }),

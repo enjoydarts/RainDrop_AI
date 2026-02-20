@@ -16,6 +16,8 @@ interface SettingsFormProps {
   initialTone: string
   initialNotificationsEnabled: boolean
   initialCollectionId: number | null
+  initialFactsExtractionModel: string
+  initialSummaryGenerationModel: string
   hasAnthropicApiKey: boolean
   hasOpenaiApiKey: boolean
   collections: CollectionOption[]
@@ -26,6 +28,8 @@ export function SettingsForm({
   initialTone,
   initialNotificationsEnabled,
   initialCollectionId,
+  initialFactsExtractionModel,
+  initialSummaryGenerationModel,
   hasAnthropicApiKey,
   hasOpenaiApiKey,
   collections,
@@ -40,6 +44,10 @@ export function SettingsForm({
   const [defaultImportCollectionId, setDefaultImportCollectionId] = useState(
     initialCollectionId ? String(initialCollectionId) : ""
   )
+  const [factsExtractionModel, setFactsExtractionModel] = useState(initialFactsExtractionModel)
+  const [summaryGenerationModel, setSummaryGenerationModel] = useState(
+    initialSummaryGenerationModel
+  )
   const [anthropicApiKey, setAnthropicApiKey] = useState("")
   const [openaiApiKey, setOpenaiApiKey] = useState("")
   const [clearAnthropicApiKey, setClearAnthropicApiKey] = useState(false)
@@ -52,8 +60,17 @@ export function SettingsForm({
         defaultSummaryTone: initialTone,
         notificationsEnabled: initialNotificationsEnabled,
         defaultImportCollectionId: initialCollectionId ? String(initialCollectionId) : "",
+        factsExtractionModel: initialFactsExtractionModel,
+        summaryGenerationModel: initialSummaryGenerationModel,
       }),
-    [initialBudgetUsd, initialCollectionId, initialNotificationsEnabled, initialTone]
+    [
+      initialBudgetUsd,
+      initialCollectionId,
+      initialFactsExtractionModel,
+      initialNotificationsEnabled,
+      initialSummaryGenerationModel,
+      initialTone,
+    ]
   )
   const [lastSavedSnapshot, setLastSavedSnapshot] = useState(initialSnapshot)
   const [isPending, startTransition] = useTransition()
@@ -63,6 +80,8 @@ export function SettingsForm({
     defaultSummaryTone,
     notificationsEnabled,
     defaultImportCollectionId,
+    factsExtractionModel,
+    summaryGenerationModel,
   })
   const hasUnsavedChanges =
     currentSnapshot !== lastSavedSnapshot ||
@@ -80,6 +99,8 @@ export function SettingsForm({
           defaultSummaryTone,
           notificationsEnabled,
           defaultImportCollectionId,
+          factsExtractionModel,
+          summaryGenerationModel,
           anthropicApiKey,
           openaiApiKey,
           clearAnthropicApiKey,
@@ -133,6 +154,39 @@ export function SettingsForm({
             />
           </label>
         </div>
+        <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              事実抽出モデル
+            </span>
+            <select
+              value={factsExtractionModel}
+              onChange={(e) => setFactsExtractionModel(e.target.value)}
+              className="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+            >
+              <option value="claude-haiku-4-5">Claude Haiku 4.5（高速）</option>
+              <option value="claude-sonnet-4-6">Claude Sonnet 4.6（高品質）</option>
+              <option value="claude-opus-4-6">Claude Opus 4.6（高品質・高コスト）</option>
+            </select>
+          </label>
+          <label className="block">
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
+              要約生成モデル
+            </span>
+            <select
+              value={summaryGenerationModel}
+              onChange={(e) => setSummaryGenerationModel(e.target.value)}
+              className="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
+            >
+              <option value="claude-sonnet-4-6">Claude Sonnet 4.6（推奨）</option>
+              <option value="claude-opus-4-6">Claude Opus 4.6（高品質・高コスト）</option>
+              <option value="claude-haiku-4-5">Claude Haiku 4.5（低コスト）</option>
+            </select>
+          </label>
+        </div>
+        <p className="mt-2 text-xs text-slate-500 dark:text-slate-400">
+          本文抽出は trafilatura を利用しており、現時点ではモデル切替対象外です。
+        </p>
       </div>
 
       <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
