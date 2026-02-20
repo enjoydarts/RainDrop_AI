@@ -4,6 +4,7 @@ import { summaries, raindrops, users, digests } from "@/db/schema"
 import { eq, and, gte, lt, isNull, desc } from "drizzle-orm"
 import { decrypt } from "@/lib/crypto"
 import { trackAnthropicUsage } from "@/lib/cost-tracker"
+import { notifyUser } from "@/lib/ably"
 import Anthropic from "@anthropic-ai/sdk"
 
 const DAY_MS = 24 * 60 * 60 * 1000
@@ -154,74 +155,75 @@ async function runWeeklyDigest({
 
   for (const userId of activeUsers) {
     const result = await step.run(`generate-digest-${userId}-${stepSuffix}`, async () => {
-      // ユーザーのAPIキーを取得
-      const [user] = await db
-        .select({ anthropicApiKeyEncrypted: users.anthropicApiKeyEncrypted })
-        .from(users)
-        .where(eq(users.id, userId))
-        .limit(1)
+      try {
+        // ユーザーのAPIキーを取得
+        const [user] = await db
+          .select({ anthropicApiKeyEncrypted: users.anthropicApiKeyEncrypted })
+          .from(users)
+          .where(eq(users.id, userId))
+          .limit(1)
 
-      if (!user?.anthropicApiKeyEncrypted) {
-        return { userId, skipped: true, reason: "no_api_key" }
-      }
-
-      const apiKey = decrypt(user.anthropicApiKeyEncrypted)
-
-      // 先週の要約を取得（記事情報と結合）
-      const weeklySummaries = await db
-        .select({
-          summary: summaries.summary,
-          tone: summaries.tone,
-          theme: summaries.theme,
-          rating: summaries.rating,
-          articleTitle: raindrops.title,
-          createdAt: summaries.createdAt,
-        })
-        .from(summaries)
-        .innerJoin(
-          raindrops,
-          and(
-            eq(summaries.raindropId, raindrops.id),
-            eq(summaries.userId, raindrops.userId)
-          )
-        )
-        .where(
-          and(
-            eq(summaries.userId, userId),
-            isNull(summaries.deletedAt),
-            eq(summaries.status, "completed"),
-            gte(summaries.createdAt, periodStart),
-            lt(summaries.createdAt, periodEnd)
-          )
-        )
-        .orderBy(desc(summaries.createdAt))
-        .limit(50)
-
-      if (weeklySummaries.length === 0) {
-        return { userId, skipped: true, reason: "no_summaries" }
-      }
-
-      // トップテーマを集計
-      const themeCount = new Map<string, number>()
-      weeklySummaries.forEach((s) => {
-        if (s.theme) {
-          themeCount.set(s.theme, (themeCount.get(s.theme) || 0) + 1)
+        if (!user?.anthropicApiKeyEncrypted) {
+          return { userId, skipped: true, reason: "no_api_key" }
         }
-      })
-      const topThemes = Array.from(themeCount.entries())
-        .sort((a, b) => b[1] - a[1])
-        .slice(0, 5)
-        .map(([theme]) => theme)
 
-      // Claude でダイジェストを生成
-      const summaryTexts = weeklySummaries
-        .map(
-          (s, i) =>
-            `${i + 1}. 【${s.articleTitle}】${s.theme ? `(テーマ: ${s.theme})` : ""}\n${s.summary}`
-        )
-        .join("\n\n")
+        const apiKey = decrypt(user.anthropicApiKeyEncrypted)
 
-      const prompt = `以下は対象期間（${formatDateJst(periodStart)} 〜 ${formatDateJst(new Date(periodEnd.getTime() - 1))}）に読んだ記事の要約${weeklySummaries.length}件です。
+        // 先週の要約を取得（記事情報と結合）
+        const weeklySummaries = await db
+          .select({
+            summary: summaries.summary,
+            tone: summaries.tone,
+            theme: summaries.theme,
+            rating: summaries.rating,
+            articleTitle: raindrops.title,
+            createdAt: summaries.createdAt,
+          })
+          .from(summaries)
+          .innerJoin(
+            raindrops,
+            and(
+              eq(summaries.raindropId, raindrops.id),
+              eq(summaries.userId, raindrops.userId)
+            )
+          )
+          .where(
+            and(
+              eq(summaries.userId, userId),
+              isNull(summaries.deletedAt),
+              eq(summaries.status, "completed"),
+              gte(summaries.createdAt, periodStart),
+              lt(summaries.createdAt, periodEnd)
+            )
+          )
+          .orderBy(desc(summaries.createdAt))
+          .limit(50)
+
+        if (weeklySummaries.length === 0) {
+          return { userId, skipped: true, reason: "no_summaries" }
+        }
+
+        // トップテーマを集計
+        const themeCount = new Map<string, number>()
+        weeklySummaries.forEach((s) => {
+          if (s.theme) {
+            themeCount.set(s.theme, (themeCount.get(s.theme) || 0) + 1)
+          }
+        })
+        const topThemes = Array.from(themeCount.entries())
+          .sort((a, b) => b[1] - a[1])
+          .slice(0, 5)
+          .map(([theme]) => theme)
+
+        // Claude でダイジェストを生成
+        const summaryTexts = weeklySummaries
+          .map(
+            (s, i) =>
+              `${i + 1}. 【${s.articleTitle}】${s.theme ? `(テーマ: ${s.theme})` : ""}\n${s.summary}`
+          )
+          .join("\n\n")
+
+        const prompt = `以下は対象期間（${formatDateJst(periodStart)} 〜 ${formatDateJst(new Date(periodEnd.getTime() - 1))}）に読んだ記事の要約${weeklySummaries.length}件です。
 
 ${summaryTexts}
 
@@ -251,40 +253,67 @@ ${summaryTexts}
 
 （今週の読書傾向から、来週読むとよい分野や視点の提案を2〜3文）`
 
-      const client = new Anthropic({ apiKey })
-      const digestResult = await generateDigestMarkdown({ client, prompt, logger })
+        const client = new Anthropic({ apiKey })
+        const digestResult = await generateDigestMarkdown({ client, prompt, logger })
 
-      // コストトラッキング
-      await trackAnthropicUsage({
-        userId,
-        model: digestResult.model,
-        inputTokens: digestResult.inputTokens,
-        outputTokens: digestResult.outputTokens,
-      }).catch((err) => logger.warn("Failed to track digest cost", { err }))
-
-      // ダイジェストを保存
-      await db
-        .insert(digests)
-        .values({
+        // コストトラッキング
+        await trackAnthropicUsage({
           userId,
-          period: "weekly",
-          periodStart,
-          periodEnd,
-          content: digestResult.text,
-          summaryCount: weeklySummaries.length,
-          topThemes,
-        })
-        .onConflictDoUpdate({
-          target: [digests.userId, digests.period, digests.periodStart, digests.periodEnd],
-          set: {
+          model: digestResult.model,
+          inputTokens: digestResult.inputTokens,
+          outputTokens: digestResult.outputTokens,
+        }).catch((err) => logger.warn("Failed to track digest cost", { err }))
+
+        // ダイジェストを保存
+        const [savedDigest] = await db
+          .insert(digests)
+          .values({
+            userId,
+            period: "weekly",
+            periodStart,
+            periodEnd,
             content: digestResult.text,
             summaryCount: weeklySummaries.length,
             topThemes,
-            createdAt: new Date(),
-          },
+          })
+          .onConflictDoUpdate({
+            target: [digests.userId, digests.period, digests.periodStart, digests.periodEnd],
+            set: {
+              content: digestResult.text,
+              summaryCount: weeklySummaries.length,
+              topThemes,
+              createdAt: new Date(),
+            },
+          })
+          .returning({ id: digests.id })
+
+        await notifyUser(userId, "digest:completed", {
+          digestId: savedDigest?.id ?? null,
+          period: "weekly",
+          periodStart: periodStart.toISOString(),
+          periodEnd: periodEnd.toISOString(),
+          summaryCount: weeklySummaries.length,
         })
 
-      return { userId, success: true, summaryCount: weeklySummaries.length }
+        return { userId, success: true, summaryCount: weeklySummaries.length }
+      } catch (error) {
+        const message = error instanceof Error ? error.message : "ダイジェスト生成に失敗しました"
+        logger.error("Failed to generate digest", {
+          userId,
+          periodStart: periodStart.toISOString(),
+          periodEnd: periodEnd.toISOString(),
+          error: message,
+        })
+
+        await notifyUser(userId, "digest:failed", {
+          period: "weekly",
+          periodStart: periodStart.toISOString(),
+          periodEnd: periodEnd.toISOString(),
+          error: message,
+        })
+
+        return { userId, failed: true, reason: message }
+      }
     })
 
     results.push(result)

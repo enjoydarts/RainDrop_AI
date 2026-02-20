@@ -2,7 +2,7 @@
 
 import { useState, useMemo } from "react"
 import Link from "next/link"
-import { Bell, Package, Check, X } from "lucide-react"
+import { Bell, Package, Check, X, BookOpen } from "lucide-react"
 import { Card, CardContent } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -16,6 +16,8 @@ const TYPE_ICONS = {
   "summary:failed": X,
   "themes:completed": Check,
   "themes:failed": X,
+  "digest:completed": BookOpen,
+  "digest:failed": X,
 } as const
 
 const TYPE_LABELS: Record<string, string> = {
@@ -24,6 +26,8 @@ const TYPE_LABELS: Record<string, string> = {
   "summary:failed": "要約失敗",
   "themes:completed": "分類完了",
   "themes:failed": "分類失敗",
+  "digest:completed": "ダイジェスト完了",
+  "digest:failed": "ダイジェスト失敗",
 }
 
 const TYPE_ORDER = [
@@ -32,6 +36,8 @@ const TYPE_ORDER = [
   "themes:completed",
   "summary:failed",
   "themes:failed",
+  "digest:completed",
+  "digest:failed",
 ] as const
 
 const TYPE_STYLES: Record<
@@ -59,6 +65,16 @@ const TYPE_STYLES: Record<
     unreadBadge: "bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-950/50",
   },
   "themes:failed": {
+    iconBg: "bg-red-100 dark:bg-red-950/50",
+    iconText: "text-red-600",
+    unreadBadge: "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50",
+  },
+  "digest:completed": {
+    iconBg: "bg-indigo-100 dark:bg-indigo-950/50",
+    iconText: "text-indigo-600",
+    unreadBadge: "bg-indigo-100 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-100 dark:hover:bg-indigo-950/50",
+  },
+  "digest:failed": {
     iconBg: "bg-red-100 dark:bg-red-950/50",
     iconText: "text-red-600",
     unreadBadge: "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50",
@@ -91,6 +107,16 @@ function getExtraMeta(notification: Notification): string | null {
       typeof notification.data?.count === "number" ? notification.data.count : null
     if (count !== null) {
       return `分類 ${count}件`
+    }
+  }
+
+  if (notification.type === "digest:completed") {
+    const count =
+      typeof notification.data?.summaryCount === "number"
+        ? notification.data.summaryCount
+        : null
+    if (count !== null) {
+      return `対象要約 ${count}件`
     }
   }
 

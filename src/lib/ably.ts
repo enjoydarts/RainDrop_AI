@@ -75,6 +75,19 @@ function getNotificationContent(eventName: string, data: Record<string, any>) {
         title: "エンベディング生成に失敗しました",
         description: data.error || "エラーが発生しました",
       }
+    case "digest:completed":
+      return {
+        title: "ダイジェスト生成が完了しました",
+        description:
+          typeof data.summaryCount === "number"
+            ? `${data.summaryCount}件の要約から週次ダイジェストを生成しました。`
+            : "週次ダイジェストの生成が完了しました。",
+      }
+    case "digest:failed":
+      return {
+        title: "ダイジェスト生成に失敗しました",
+        description: data.error || "エラーが発生しました",
+      }
     default:
       return {
         title: "通知",
