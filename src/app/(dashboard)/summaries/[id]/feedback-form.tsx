@@ -34,8 +34,8 @@ export function FeedbackForm({
   }
 
   return (
-    <div className="rounded-lg border border-slate-200 bg-white p-4">
-      <h3 className="text-sm font-semibold text-slate-900">この要約の改善フィードバック</h3>
+    <div className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4">
+      <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">この要約の改善フィードバック</h3>
       <div className="mt-3 flex items-center gap-1">
         {[1, 2, 3, 4, 5].map((value) => (
           <button

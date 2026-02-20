@@ -82,14 +82,14 @@ export default async function JobsPage({
 
   return (
     <div className="space-y-6">
-      <div className="border-b border-slate-200 pb-6">
+      <div className="border-b border-slate-200 dark:border-slate-700 pb-6">
         <div className="flex items-center justify-between gap-4">
           <div>
-            <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-slate-900">
+            <h1 className="flex items-center gap-2 text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
               <Briefcase className="h-7 w-7 text-indigo-600" />
               ジョブ管理
             </h1>
-            <p className="mt-2 text-sm text-slate-600">
+            <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">
               要約ジョブの状態確認・失敗ジョブの再実行ができます
             </p>
             <p className="mt-1 text-xs text-slate-500">
@@ -117,7 +117,7 @@ export default async function JobsPage({
               {prevPage ? (
                 <Link
                   href={`/jobs?page=${prevPage}`}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                  className="rounded-md border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   前へ
                 </Link>
@@ -125,7 +125,7 @@ export default async function JobsPage({
               {nextPage ? (
                 <Link
                   href={`/jobs?page=${nextPage}`}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                  className="rounded-md border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   次へ
                 </Link>

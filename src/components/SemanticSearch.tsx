@@ -1,7 +1,7 @@
 "use client"
 
-import { useState } from "react"
-import { Search, Sparkles, Loader2 } from "lucide-react"
+import { useState, useEffect, useCallback } from "react"
+import { Search, Sparkles, Loader2, Clock, X } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Button } from "@/components/ui/button"
 import { Badge } from "@/components/ui/badge"
@@ -12,7 +12,10 @@ interface SearchResult {
   summaryId: string
   raindropId: number
   title: string
+  link: string
   summary: string
+  snippet: string
+  keywordMatch: boolean
   rating: number | null
   tone: string
   theme: string | null
@@ -20,34 +23,99 @@ interface SearchResult {
   similarity: number
 }
 
+const HISTORY_KEY = "semantic_search_history"
+const MAX_HISTORY = 8
+
+function getHistory(): string[] {
+  if (typeof window === "undefined") return []
+  try {
+    return JSON.parse(localStorage.getItem(HISTORY_KEY) || "[]")
+  } catch {
+    return []
+  }
+}
+
+function saveToHistory(query: string) {
+  const history = getHistory().filter((h) => h !== query)
+  history.unshift(query)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history.slice(0, MAX_HISTORY)))
+}
+
+function removeFromHistory(query: string) {
+  const history = getHistory().filter((h) => h !== query)
+  localStorage.setItem(HISTORY_KEY, JSON.stringify(history))
+}
+
+/**
+ * クエリ文字列をハイライトして返す
+ */
+function HighlightedText({ text, query }: { text: string; query: string }) {
+  if (!query.trim()) return <span>{text}</span>
+  const idx = text.toLowerCase().indexOf(query.toLowerCase())
+  if (idx === -1) return <span>{text}</span>
+  return (
+    <span>
+      {text.slice(0, idx)}
+      <mark className="bg-yellow-200 dark:bg-yellow-800 rounded px-0.5 not-italic font-medium">
+        {text.slice(idx, idx + query.length)}
+      </mark>
+      {text.slice(idx + query.length)}
+    </span>
+  )
+}
+
 export function SemanticSearch() {
   const [query, setQuery] = useState("")
   const [results, setResults] = useState<SearchResult[]>([])
   const [isSearching, setIsSearching] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const [history, setHistory] = useState<string[]>([])
+  const [showHistory, setShowHistory] = useState(false)
 
-  const handleSearch = async () => {
-    if (!query.trim()) return
+  useEffect(() => {
+    setHistory(getHistory())
+  }, [])
+
+  const handleSearch = useCallback(async (searchQuery?: string) => {
+    const q = (searchQuery ?? query).trim()
+    if (!q) return
 
     setIsSearching(true)
     setError(null)
+    setShowHistory(false)
 
     try {
       const res = await fetch(
-        `/api/search/semantic?q=${encodeURIComponent(query)}&limit=10`
+        `/api/search/semantic?q=${encodeURIComponent(q)}&limit=10`
       )
 
       if (!res.ok) {
-        throw new Error("検索に失敗しました")
+        const data = await res.json()
+        throw new Error(data.error || "検索に失敗しました")
       }
 
       const data = await res.json()
       setResults(data.results || [])
+      saveToHistory(q)
+      setHistory(getHistory())
+      if (searchQuery) setQuery(searchQuery)
     } catch (err) {
       setError(err instanceof Error ? err.message : "エラーが発生しました")
     } finally {
       setIsSearching(false)
     }
+  }, [query])
+
+  const handleClear = () => {
+    setResults([])
+    setQuery("")
+    setError(null)
+  }
+
+  const handleRemoveHistory = (item: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    removeFromHistory(item)
+    setHistory(getHistory())
   }
 
   return (
@@ -62,13 +130,45 @@ export function SemanticSearch() {
             type="text"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            onKeyDown={(e) => e.key === "Enter" && handleSearch()}
+            onFocus={() => setShowHistory(true)}
+            onBlur={() => setTimeout(() => setShowHistory(false), 150)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSearch()
+              if (e.key === "Escape") setShowHistory(false)
+            }}
             placeholder="意味で検索... (例: 認証について、パフォーマンス改善)"
             className="pl-10"
           />
+
+          {/* 検索履歴ドロップダウン */}
+          {showHistory && history.length > 0 && results.length === 0 && (
+            <div className="absolute top-full left-0 right-0 z-10 mt-1 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-lg">
+              <div className="p-2">
+                <p className="text-xs text-slate-500 dark:text-slate-400 px-2 py-1 flex items-center gap-1">
+                  <Clock className="h-3 w-3" />
+                  最近の検索
+                </p>
+                {history.map((item) => (
+                  <div
+                    key={item}
+                    className="flex items-center justify-between rounded px-2 py-1.5 hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer group"
+                    onMouseDown={() => handleSearch(item)}
+                  >
+                    <span className="text-sm text-slate-700 dark:text-slate-300 truncate">{item}</span>
+                    <button
+                      className="opacity-0 group-hover:opacity-100 text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-opacity"
+                      onMouseDown={(e) => handleRemoveHistory(item, e)}
+                    >
+                      <X className="h-3.5 w-3.5" />
+                    </button>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
         </div>
         <Button
-          onClick={handleSearch}
+          onClick={() => handleSearch()}
           disabled={isSearching || !query.trim()}
           className="bg-indigo-600 hover:bg-indigo-700"
         >
@@ -85,8 +185,8 @@ export function SemanticSearch() {
 
       {/* エラー表示 */}
       {error && (
-        <div className="rounded-md bg-red-50 border border-red-200 px-4 py-3">
-          <p className="text-sm text-red-800">{error}</p>
+        <div className="rounded-md bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 px-4 py-3">
+          <p className="text-sm text-red-800 dark:text-red-200">{error}</p>
         </div>
       )}
 
@@ -94,17 +194,10 @@ export function SemanticSearch() {
       {results.length > 0 && (
         <div className="space-y-4">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-semibold text-slate-900">
+            <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
               {results.length}件の関連記事が見つかりました
             </h3>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => {
-                setResults([])
-                setQuery("")
-              }}
-            >
+            <Button variant="ghost" size="sm" onClick={handleClear}>
               クリア
             </Button>
           </div>
@@ -113,30 +206,35 @@ export function SemanticSearch() {
             {results.map((result) => (
               <Link key={result.summaryId} href={`/summaries/${result.summaryId}`}>
                 <Card className="p-4 hover:shadow-md transition-shadow cursor-pointer">
-                  <div className="flex items-start justify-between gap-4">
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2 mb-1">
-                        <h4 className="text-sm font-semibold text-slate-900 truncate">
-                          {result.title}
-                        </h4>
-                        <Badge variant="outline" className="text-xs flex-shrink-0">
+                  <div className="space-y-2">
+                    <div className="flex items-start justify-between gap-4">
+                      <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 leading-snug">
+                        <HighlightedText text={result.title} query={query} />
+                      </h4>
+                      <div className="flex items-center gap-1 flex-shrink-0">
+                        {result.keywordMatch && (
+                          <Badge variant="outline" className="text-xs text-amber-600 border-amber-300 dark:text-amber-400 dark:border-amber-700">
+                            KW
+                          </Badge>
+                        )}
+                        <Badge variant="outline" className="text-xs">
                           {Math.round(result.similarity * 100)}% 一致
                         </Badge>
                       </div>
-                      <p className="text-sm text-slate-600 line-clamp-2 mb-2">
-                        {result.summary}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-slate-500">
-                        {result.theme && (
-                          <Badge variant="secondary" className="text-xs">
-                            {result.theme}
-                          </Badge>
-                        )}
-                        <span>{result.tone}</span>
-                        {result.rating && (
-                          <span>{"★".repeat(result.rating)}</span>
-                        )}
-                      </div>
+                    </div>
+                    <p className="text-sm text-slate-600 dark:text-slate-400 leading-relaxed">
+                      <HighlightedText text={result.snippet} query={query} />
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-slate-500 dark:text-slate-400">
+                      {result.theme && (
+                        <Badge variant="secondary" className="text-xs">
+                          {result.theme}
+                        </Badge>
+                      )}
+                      <span>{result.tone}</span>
+                      {result.rating && (
+                        <span>{"★".repeat(result.rating)}</span>
+                      )}
                     </div>
                   </div>
                 </Card>
@@ -146,19 +244,26 @@ export function SemanticSearch() {
         </div>
       )}
 
+      {/* 検索結果なし */}
+      {results.length === 0 && !error && !isSearching && query.trim() !== "" && (
+        <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+          <p className="text-sm">「{query}」に関連する記事が見つかりませんでした</p>
+        </div>
+      )}
+
       {/* 検索前の説明 */}
       {results.length === 0 && !error && !isSearching && query.trim() === "" && (
-        <Card className="p-6 bg-gradient-to-br from-indigo-50 to-purple-50 border-indigo-100">
+        <Card className="p-6 bg-gradient-to-br from-indigo-50 dark:from-indigo-950/30 to-purple-50 dark:to-purple-950/30 border-indigo-100 dark:border-indigo-900">
           <div className="flex items-start gap-3">
-            <div className="rounded-full bg-indigo-100 p-2">
+            <div className="rounded-full bg-indigo-100 dark:bg-indigo-900/50 p-2">
               <Sparkles className="h-5 w-5 text-indigo-600" />
             </div>
             <div>
-              <h4 className="text-sm font-semibold text-slate-900 mb-1">
-                AI意味検索
+              <h4 className="text-sm font-semibold text-slate-900 dark:text-slate-100 mb-1">
+                AI意味検索（ハイブリッド）
               </h4>
-              <p className="text-sm text-slate-600">
-                キーワードの完全一致ではなく、意味が似ている記事を検索します。
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                ベクトル類似度とキーワードマッチを組み合わせて検索します。
                 <br />
                 例: 「認証」で検索すると、OAuth、JWT、セキュリティ関連の記事がヒットします。
               </p>

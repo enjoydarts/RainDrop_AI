@@ -85,6 +85,13 @@
       "when": 1775840000000,
       "tag": "0011_add_summary_jobs_table",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1775841000000,
+      "tag": "0012_add_digests_table",
+      "breakpoints": true
     }
   ]
 }

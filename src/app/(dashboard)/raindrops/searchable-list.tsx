@@ -25,11 +25,28 @@ interface Raindrop {
 interface SearchableListProps {
   items: Raindrop[]
   collectionMap?: Map<number, string>
+  summaryCountMap?: Map<number, number>
 }
 
-export function SearchableList({ items, collectionMap = new Map() }: SearchableListProps) {
+export function SearchableList({ items, collectionMap = new Map(), summaryCountMap = new Map() }: SearchableListProps) {
   const [searchQuery, setSearchQuery] = useState("")
   const [selectedCollection, setSelectedCollection] = useState<number | null>(null)
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
+
+  // タグ一覧を生成
+  const availableTags = useMemo(() => {
+    const tagCountMap = new Map<string, number>()
+    items.forEach((item) => {
+      if (item.tags && Array.isArray(item.tags)) {
+        (item.tags as string[]).forEach((tag) => {
+          tagCountMap.set(tag, (tagCountMap.get(tag) || 0) + 1)
+        })
+      }
+    })
+    return Array.from(tagCountMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag]) => tag)
+  }, [items])
 
   // コレクション一覧を生成
   const collections = useMemo(() => {
@@ -51,13 +68,21 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
       .sort((a, b) => b.count - a.count)
   }, [items, collectionMap])
 
-  // 検索・コレクションフィルタリング
+  // 検索・コレクション・タグフィルタリング
   const filteredItems = useMemo(() => {
     let result = items
 
     // コレクションフィルタ
     if (selectedCollection !== null) {
       result = result.filter((item) => item.collectionId === selectedCollection)
+    }
+
+    // タグフィルタ
+    if (selectedTag !== null) {
+      result = result.filter((item) => {
+        if (!item.tags || !Array.isArray(item.tags)) return false
+        return (item.tags as string[]).includes(selectedTag)
+      })
     }
 
     // 検索フィルタ
@@ -127,9 +152,40 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
         )}
       </div>
 
+      {/* タグフィルター */}
+      {availableTags.length > 0 && (
+        <div className="flex gap-2 flex-wrap">
+          <button
+            onClick={() => setSelectedTag(null)}
+            className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+              selectedTag === null
+                ? "bg-indigo-600 text-white border-indigo-600"
+                : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-300"
+            }`}
+          >
+            <Tag className="h-3 w-3" />
+            すべて
+          </button>
+          {availableTags.map((tag) => (
+            <button
+              key={tag}
+              onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+              className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border transition-colors ${
+                selectedTag === tag
+                  ? "bg-indigo-600 text-white border-indigo-600"
+                  : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-indigo-300"
+              }`}
+            >
+              <Tag className="h-3 w-3" />
+              {tag}
+            </button>
+          ))}
+        </div>
+      )}
+
       {/* 検索結果件数 */}
-      {searchQuery && (
-        <div className="text-sm text-slate-600">
+      {(searchQuery || selectedTag) && (
+        <div className="text-sm text-slate-600 dark:text-slate-400">
           {filteredItems.length}件の記事が見つかりました
         </div>
       )}
@@ -138,10 +194,10 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
       {filteredItems.length === 0 ? (
         <Card>
           <div className="px-4 py-16 text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+            <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
               <Search className="h-6 w-6 text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-slate-900 mb-2">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
               検索結果が見つかりませんでした
             </h3>
             <p className="text-sm text-slate-500 max-w-sm mx-auto">
@@ -164,11 +220,11 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
             return (
               <div
                 key={item.id}
-                className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm card-hover"
+                className="group overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm card-hover"
               >
                 {/* カバー画像（上部・大きく） */}
                 {item.cover ? (
-                  <div className="relative aspect-[16/9] overflow-hidden bg-slate-100">
+                  <div className="relative aspect-[16/9] overflow-hidden bg-slate-100 dark:bg-slate-800">
                     <Image
                       src={item.cover}
                       alt=""
@@ -177,28 +233,28 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
                     />
                     {/* 日付バッジ（画像上） */}
                     <div className="absolute top-3 right-3">
-                      <Badge className="bg-white/90 backdrop-blur-sm text-slate-700 hover:bg-white/90">
+                      <Badge className="bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm text-slate-700 dark:text-slate-300 hover:bg-white/90 dark:hover:bg-slate-900/90">
                         <Calendar className="h-3 w-3 mr-1" />
                         {formatDate(item.createdAtRemote)}
                       </Badge>
                     </div>
                   </div>
                 ) : (
-                  <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                  <div className="aspect-[16/9] bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                     <Newspaper className="h-12 w-12 text-slate-300" />
                   </div>
                 )}
 
                 {/* コンテンツエリア */}
                 <div className="p-5">
-                  <h3 className="text-lg font-semibold text-slate-900 line-clamp-2 mb-2 hover:text-indigo-600 transition-colors">
+                  <h3 className="text-lg font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 mb-2 hover:text-indigo-600 transition-colors">
                     <a href={item.link} target="_blank" rel="noopener noreferrer">
                       {item.title}
                     </a>
                   </h3>
 
                   {item.excerpt && (
-                    <p className="text-sm text-slate-600 line-clamp-3 mb-4">
+                    <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3 mb-4">
                       {item.excerpt}
                     </p>
                   )}
@@ -207,7 +263,14 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
                   {item.tags && Array.isArray(item.tags) && (item.tags as string[]).length > 0 ? (
                     <div className="flex flex-wrap gap-1.5 mb-4">
                       {(item.tags as string[]).slice(0, 3).map((tag) => (
-                        <Badge key={tag} variant="secondary" className="text-xs">
+                        <Badge
+                          key={tag}
+                          variant="secondary"
+                          className={`text-xs cursor-pointer hover:bg-indigo-100 dark:hover:bg-indigo-900 hover:text-indigo-700 dark:hover:text-indigo-300 transition-colors ${
+                            selectedTag === tag ? "bg-indigo-100 dark:bg-indigo-900 text-indigo-700 dark:text-indigo-300" : ""
+                          }`}
+                          onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                        >
                           {tag}
                         </Badge>
                       ))}
@@ -218,6 +281,11 @@ export function SearchableList({ items, collectionMap = new Map() }: SearchableL
                   <div className="flex items-center gap-2">
                     <SummaryButton raindropId={item.id} />
                     <DeleteButton raindropId={item.id} articleTitle={item.title} />
+                    {(summaryCountMap.get(item.id) ?? 0) > 0 && (
+                      <Badge variant="outline" className="text-xs ml-auto text-indigo-600 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/50">
+                        {summaryCountMap.get(item.id)}トーン
+                      </Badge>
+                    )}
                   </div>
                 </div>
               </div>

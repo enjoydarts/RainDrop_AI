@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server"
 import { auth } from "@/auth"
 import { db } from "@/db"
 import { summaries, raindrops, users } from "@/db/schema"
-import { eq, and, sql } from "drizzle-orm"
+import { eq, and, isNull, sql } from "drizzle-orm"
 import { generateEmbedding } from "@/lib/embeddings"
 import { decrypt } from "@/lib/crypto"
 
@@ -10,12 +10,27 @@ const QUERY_CACHE_TTL_MS = 1000 * 60 * 30
 const queryEmbeddingCache = new Map<string, { embedding: number[]; expiresAt: number }>()
 
 /**
- * ベクトル検索（意味検索）API
- * GET /api/search/semantic?q=検索クエリ&limit=10
+ * クエリに対するスニペットを抽出する
+ * キーワードが見つかった場合はその周辺を、見つからない場合は先頭部分を返す
+ */
+function extractSnippet(text: string, query: string, contextLen = 80, maxLen = 220): string {
+  const idx = text.toLowerCase().indexOf(query.toLowerCase())
+  if (idx === -1) {
+    return text.length > maxLen ? text.slice(0, maxLen) + "…" : text
+  }
+  const start = Math.max(0, idx - contextLen)
+  const end = Math.min(text.length, idx + query.length + contextLen)
+  const prefix = start > 0 ? "…" : ""
+  const suffix = end < text.length ? "…" : ""
+  return prefix + text.slice(start, end) + suffix
+}
+
+/**
+ * ハイブリッド意味検索API
+ * GET /api/search/semantic?q=検索クエリ&limit=10&theme=テーマ
  */
 export async function GET(request: NextRequest) {
   try {
-    // 認証チェック
     const session = await auth()
     if (!session?.user?.id) {
       return NextResponse.json({ error: "Unauthorized" }, { status: 401 })
@@ -24,8 +39,15 @@ export async function GET(request: NextRequest) {
     const userId = session.user.id
     const searchParams = request.nextUrl.searchParams
     const query = searchParams.get("q")
-    const limit = parseInt(searchParams.get("limit") || "10", 10)
-    const themeFilter = searchParams.get("theme") // テーマフィルター
+    const limit = Math.min(parseInt(searchParams.get("limit") || "10", 10), 50)
+    const themeFilter = searchParams.get("theme")
+
+    if (!query || query.trim().length === 0) {
+      return NextResponse.json(
+        { error: "Query parameter 'q' is required" },
+        { status: 400 }
+      )
+    }
 
     const [user] = await db
       .select({ openaiApiKeyEncrypted: users.openaiApiKeyEncrypted })
@@ -42,14 +64,7 @@ export async function GET(request: NextRequest) {
 
     const openaiApiKey = decrypt(user.openaiApiKeyEncrypted)
 
-    if (!query || query.trim().length === 0) {
-      return NextResponse.json(
-        { error: "Query parameter 'q' is required" },
-        { status: 400 }
-      )
-    }
-
-    // クエリの埋め込みベクトルを生成
+    // クエリの埋め込みベクトルを生成（キャッシュ利用）
     const normalizedQuery = query.trim().toLowerCase()
     const cached = queryEmbeddingCache.get(normalizedQuery)
     let queryEmbedding: number[]
@@ -71,22 +86,28 @@ export async function GET(request: NextRequest) {
       )
     }
 
-    // ベクトル検索（コサイン類似度）
-    // pgvectorのコサイン距離: 1 - cosine_similarity
-    // 距離が小さいほど似ている
     const vectorString = `[${queryEmbedding.join(",")}]`
+    const keywordPattern = `%${normalizedQuery}%`
 
-    let baseQuery = db
+    // ハイブリッドスコア: ベクトル類似度(70%) + キーワードマッチ(30%)
+    const vectorScore = sql<number>`1 - (${summaries.embedding} <=> ${vectorString}::vector)`
+    const keywordScore = sql<number>`CASE WHEN LOWER(${summaries.summary}) LIKE ${keywordPattern} OR LOWER(${raindrops.title}) LIKE ${keywordPattern} THEN 1.0 ELSE 0.0 END`
+    const hybridScore = sql<number>`(0.7 * (1 - (${summaries.embedding} <=> ${vectorString}::vector))) + (0.3 * CASE WHEN LOWER(${summaries.summary}) LIKE ${keywordPattern} OR LOWER(${raindrops.title}) LIKE ${keywordPattern} THEN 1.0 ELSE 0.0 END)`
+
+    const results = await db
       .select({
         summaryId: summaries.id,
         raindropId: summaries.raindropId,
         title: raindrops.title,
+        link: raindrops.link,
         summary: summaries.summary,
         rating: summaries.rating,
         tone: summaries.tone,
         theme: summaries.theme,
         createdAt: summaries.createdAt,
-        similarity: sql<number>`1 - (${summaries.embedding} <=> ${vectorString}::vector)`,
+        vectorScore,
+        keywordScore,
+        hybridScore,
       })
       .from(summaries)
       .innerJoin(
@@ -100,28 +121,30 @@ export async function GET(request: NextRequest) {
         and(
           eq(summaries.userId, userId),
           eq(summaries.status, "completed"),
+          isNull(summaries.deletedAt),
           sql`${summaries.embedding} IS NOT NULL`,
           themeFilter ? eq(summaries.theme, themeFilter) : undefined
         )
       )
-      .orderBy(sql`${summaries.embedding} <=> ${vectorString}::vector`)
+      .orderBy(sql`${hybridScore} DESC`)
       .limit(limit)
 
-    const results = await baseQuery
-
     const filteredResults = results
+      .filter((r) => r.hybridScore >= 0.35)
       .map((r) => ({
         summaryId: r.summaryId,
         raindropId: r.raindropId,
         title: r.title,
+        link: r.link,
         summary: r.summary,
+        snippet: extractSnippet(r.summary, query.trim()),
+        keywordMatch: r.keywordScore >= 1.0,
         rating: r.rating,
         tone: r.tone,
         theme: r.theme,
         createdAt: r.createdAt,
-        similarity: r.similarity,
+        similarity: Math.min(r.hybridScore, 1.0),
       }))
-      .filter((r) => r.similarity >= 0.5)
 
     return NextResponse.json({
       query,

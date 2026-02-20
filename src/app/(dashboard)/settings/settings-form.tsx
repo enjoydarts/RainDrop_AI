@@ -101,17 +101,17 @@ export function SettingsForm({
 
   return (
     <div className="space-y-6">
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">要約設定</h2>
+      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">要約設定</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               既定トーン
             </span>
             <select
               value={defaultSummaryTone}
               onChange={(e) => setDefaultSummaryTone(e.target.value)}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+              className="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
             >
               <option value="neutral">客観的</option>
               <option value="snarky">毒舌</option>
@@ -120,7 +120,7 @@ export function SettingsForm({
             </select>
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               月次予算 (USD)
             </span>
             <Input
@@ -135,17 +135,17 @@ export function SettingsForm({
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">同期設定</h2>
+      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">同期設定</h2>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               既定の同期コレクション
             </span>
             <select
               value={defaultImportCollectionId}
               onChange={(e) => setDefaultImportCollectionId(e.target.value)}
-              className="w-full rounded-md border border-slate-300 bg-white px-3 py-2 text-sm text-slate-900"
+              className="w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 px-3 py-2 text-sm text-slate-900 dark:text-slate-100"
             >
               <option value="">すべてのコレクション</option>
               {collections.map((collection) => (
@@ -158,14 +158,14 @@ export function SettingsForm({
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">APIキー設定</h2>
+      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">APIキー設定</h2>
         <p className="mt-1 text-xs text-slate-500">
           APIキーは暗号化して保存されます。未入力で保存すると既存値を保持します。
         </p>
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               Anthropic API Key
             </span>
             <Input
@@ -175,7 +175,7 @@ export function SettingsForm({
               placeholder={hasAnthropicApiKey ? "設定済み（更新する場合のみ入力）" : "sk-ant-..."}
               disabled={clearAnthropicApiKey}
             />
-            <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">
+            <label className="mt-2 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
               <input
                 type="checkbox"
                 checked={clearAnthropicApiKey}
@@ -185,7 +185,7 @@ export function SettingsForm({
             </label>
           </label>
           <label className="block">
-            <span className="mb-1 block text-sm font-medium text-slate-700">
+            <span className="mb-1 block text-sm font-medium text-slate-700 dark:text-slate-300">
               OpenAI API Key
             </span>
             <Input
@@ -195,7 +195,7 @@ export function SettingsForm({
               placeholder={hasOpenaiApiKey ? "設定済み（更新する場合のみ入力）" : "sk-..."}
               disabled={clearOpenaiApiKey}
             />
-            <label className="mt-2 flex items-center gap-2 text-xs text-slate-600">
+            <label className="mt-2 flex items-center gap-2 text-xs text-slate-600 dark:text-slate-400">
               <input
                 type="checkbox"
                 checked={clearOpenaiApiKey}
@@ -207,8 +207,8 @@ export function SettingsForm({
         </div>
       </div>
 
-      <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-        <h2 className="text-lg font-semibold text-slate-900">通知設定</h2>
+      <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+        <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100">通知設定</h2>
         <label className="mt-4 flex items-center gap-3">
           <input
             type="checkbox"
@@ -216,7 +216,7 @@ export function SettingsForm({
             onChange={(e) => setNotificationsEnabled(e.target.checked)}
             className="h-4 w-4 rounded border-slate-300 text-indigo-600 focus:ring-indigo-500"
           />
-          <span className="text-sm text-slate-700">
+          <span className="text-sm text-slate-700 dark:text-slate-300">
             要約や取り込みの通知を受け取る
           </span>
         </label>
@@ -232,7 +232,7 @@ export function SettingsForm({
           >
             保存
           </Button>
-          <span className="text-sm text-slate-600">
+          <span className="text-sm text-slate-600 dark:text-slate-400">
             {saveState === "saving" && "保存中..."}
             {saveState === "saved" && "保存済み"}
             {saveState === "error" && "保存に失敗しました"}

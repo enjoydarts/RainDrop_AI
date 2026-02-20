@@ -91,7 +91,7 @@ export function JobList({ jobs, statusCounts }: JobListProps) {
         {["pending", "processing", "failed", "completed"].map((status) => (
           <Card key={status} className="p-4">
             <p className="text-xs text-slate-500">{STATUS_LABELS[status] || status}</p>
-            <p className="mt-1 text-2xl font-bold text-slate-900">
+            <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">
               {statusCounts[status] || 0}
             </p>
           </Card>
@@ -154,7 +154,7 @@ export function JobList({ jobs, statusCounts }: JobListProps) {
           <Card key={job.jobId} className="p-4">
             <div className="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
               <div className="min-w-0 flex-1">
-                <p className="line-clamp-1 text-sm font-semibold text-slate-900">
+                <p className="line-clamp-1 text-sm font-semibold text-slate-900 dark:text-slate-100">
                   {job.title || "無題の記事"}
                 </p>
                 <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-slate-500">
@@ -180,7 +180,7 @@ export function JobList({ jobs, statusCounts }: JobListProps) {
                   </span>
                 </div>
                 {job.error && (
-                  <p className="mt-2 line-clamp-2 text-xs text-red-600">{job.error}</p>
+                  <p className="mt-2 line-clamp-2 text-xs text-red-600 dark:text-red-400">{job.error}</p>
                 )}
               </div>
               {job.status === "failed" && (

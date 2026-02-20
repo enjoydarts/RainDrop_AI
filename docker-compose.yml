@@ -16,6 +16,7 @@ services:
       - .env.local
     depends_on:
       - db
+      - redis
       - extract
       - inngest
     environment:
@@ -48,6 +49,19 @@ services:
       - INNGEST_DEV=1
     command: ["inngest", "dev", "-u", "http://web:3000/api/inngest"]
 
+  # Redis (レート制限・キャッシュ用)
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "6379:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
   # PostgreSQL with pgvector
   db:
     image: pgvector/pgvector:pg15
@@ -67,5 +81,6 @@ services:
 
 volumes:
   postgres_data:
+  redis_data:
   inngest_data:
   node_modules:

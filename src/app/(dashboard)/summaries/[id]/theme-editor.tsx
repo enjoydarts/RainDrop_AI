@@ -51,11 +51,11 @@ export function ThemeEditor({ summaryId, currentTheme, availableThemes }: ThemeE
       <div className="flex items-center gap-2">
         <div className="flex-1">
           {currentTheme ? (
-            <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+            <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200">
               {currentTheme}
             </Badge>
           ) : (
-            <span className="text-sm text-slate-400">未分類</span>
+            <span className="text-sm text-slate-400 dark:text-slate-500">未分類</span>
           )}
         </div>
         <Button
@@ -112,7 +112,7 @@ export function ThemeEditor({ summaryId, currentTheme, availableThemes }: ThemeE
               key={t}
               type="button"
               onClick={() => setTheme(t)}
-              className="text-xs px-2 py-1 rounded-md bg-slate-100 hover:bg-slate-200 text-slate-700 transition-colors"
+              className="text-xs px-2 py-1 rounded-md bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-300 transition-colors"
             >
               {t}
             </button>

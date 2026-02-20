@@ -4,6 +4,7 @@
  */
 
 import { cosineSimilarity } from "./embeddings"
+import { trackOpenAIUsage } from "./cost-tracker"
 
 export interface ClusterResult {
   clusters: number[]
@@ -135,7 +136,8 @@ export function kmeans(
 export async function assignThemeLabels(
   clusters: number[],
   summaries: { id: string; summary: string }[],
-  apiKey?: string
+  apiKey?: string,
+  userId?: string
 ): Promise<Map<string, string>> {
   const k = Math.max(...clusters) + 1
   const themeMap = new Map<string, string>()
@@ -198,6 +200,16 @@ export async function assignThemeLabels(
       const data = await response.json()
       const themeName = data.choices[0]?.message?.content?.trim() || "その他"
       clusterThemes.set(clusterId, themeName)
+
+      // コスト記録
+      if (userId && data.usage) {
+        await trackOpenAIUsage({
+          userId,
+          model: "gpt-4o-mini",
+          inputTokens: data.usage.prompt_tokens || 0,
+          outputTokens: data.usage.completion_tokens || 0,
+        }).catch((err) => console.error("[clustering] Failed to track usage:", err))
+      }
 
       console.log(`[clustering] Cluster ${clusterId} theme: ${themeName}`)
     } catch (error) {

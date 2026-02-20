@@ -52,7 +52,7 @@ export function ClassifyThemesButton() {
       onClick={handleClassify}
       disabled={isClassifying}
       variant="outline"
-      className="border-purple-200 hover:bg-purple-50"
+      className="border-purple-200 dark:border-purple-800 hover:bg-purple-50 dark:hover:bg-purple-950/50"
     >
       {isClassifying ? (
         <>

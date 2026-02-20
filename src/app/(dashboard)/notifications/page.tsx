@@ -40,14 +40,14 @@ export default async function NotificationsPage() {
   return (
     <div className="space-y-6">
       {/* ヘッダー */}
-      <div className="border-b border-slate-200 pb-6">
+      <div className="border-b border-slate-200 dark:border-slate-700 pb-6">
         <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
           <div>
-            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 flex items-center gap-2 sm:gap-3">
+            <h1 className="text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100 flex items-center gap-2 sm:gap-3">
               <Bell className="h-6 w-6 sm:h-8 sm:w-8 text-indigo-600" />
               通知
             </h1>
-            <p className="mt-2 text-sm sm:text-base text-slate-600">
+            <p className="mt-2 text-sm sm:text-base text-slate-600 dark:text-slate-400">
               システムからの通知を確認できます
             </p>
           </div>

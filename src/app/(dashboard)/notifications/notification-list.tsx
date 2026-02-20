@@ -39,29 +39,29 @@ const TYPE_STYLES: Record<
   { iconBg: string; iconText: string; unreadBadge: string }
 > = {
   "import:completed": {
-    iconBg: "bg-blue-100",
+    iconBg: "bg-blue-100 dark:bg-blue-950/50",
     iconText: "text-blue-600",
-    unreadBadge: "bg-blue-100 text-blue-700 hover:bg-blue-100",
+    unreadBadge: "bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300 hover:bg-blue-100 dark:hover:bg-blue-950/50",
   },
   "summary:completed": {
-    iconBg: "bg-green-100",
+    iconBg: "bg-green-100 dark:bg-green-950/50",
     iconText: "text-green-600",
-    unreadBadge: "bg-green-100 text-green-700 hover:bg-green-100",
+    unreadBadge: "bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-950/50",
   },
   "summary:failed": {
-    iconBg: "bg-red-100",
+    iconBg: "bg-red-100 dark:bg-red-950/50",
     iconText: "text-red-600",
-    unreadBadge: "bg-red-100 text-red-700 hover:bg-red-100",
+    unreadBadge: "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50",
   },
   "themes:completed": {
-    iconBg: "bg-green-100",
+    iconBg: "bg-green-100 dark:bg-green-950/50",
     iconText: "text-green-600",
-    unreadBadge: "bg-green-100 text-green-700 hover:bg-green-100",
+    unreadBadge: "bg-green-100 dark:bg-green-950/50 text-green-700 dark:text-green-300 hover:bg-green-100 dark:hover:bg-green-950/50",
   },
   "themes:failed": {
-    iconBg: "bg-red-100",
+    iconBg: "bg-red-100 dark:bg-red-950/50",
     iconText: "text-red-600",
-    unreadBadge: "bg-red-100 text-red-700 hover:bg-red-100",
+    unreadBadge: "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300 hover:bg-red-100 dark:hover:bg-red-950/50",
   },
 }
 
@@ -150,7 +150,7 @@ export function NotificationList({ notifications }: NotificationListProps) {
             >
               すべて
               {unreadCount > 0 && (
-                <Badge className="ml-2 bg-white text-slate-700 hover:bg-white">
+                <Badge className="ml-2 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700">
                   {unreadCount}
                 </Badge>
               )}
@@ -165,7 +165,7 @@ export function NotificationList({ notifications }: NotificationListProps) {
               >
                 {TYPE_LABELS[type] || type}
                 {(unreadByType.get(type) || 0) > 0 && (
-                  <Badge className="ml-2 bg-white text-slate-700 hover:bg-white">
+                  <Badge className="ml-2 bg-white dark:bg-slate-700 text-slate-700 dark:text-slate-200 hover:bg-white dark:hover:bg-slate-700">
                     {unreadByType.get(type)}
                   </Badge>
                 )}
@@ -182,7 +182,7 @@ export function NotificationList({ notifications }: NotificationListProps) {
             <Bell className="h-3.5 w-3.5 mr-1.5" />
             未読のみ表示
             {unreadCount > 0 && (
-              <Badge className="ml-2 bg-white text-indigo-600 hover:bg-white">
+              <Badge className="ml-2 bg-white dark:bg-slate-700 text-indigo-600 dark:text-indigo-300 hover:bg-white dark:hover:bg-slate-700">
                 {unreadCount}
               </Badge>
             )}
@@ -208,15 +208,15 @@ export function NotificationList({ notifications }: NotificationListProps) {
             const isUnread = notification.isRead === 0
             const extraMeta = getExtraMeta(notification)
             const style = TYPE_STYLES[notification.type] || {
-              iconBg: "bg-slate-100",
+              iconBg: "bg-slate-100 dark:bg-slate-800",
               iconText: "text-slate-600",
-              unreadBadge: "bg-slate-100 text-slate-700 hover:bg-slate-100",
+              unreadBadge: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800",
             }
 
             return (
               <Card
                 key={notification.id}
-                className={`card-hover ${isUnread ? "border-indigo-200 bg-indigo-50/30" : ""}`}
+                className={`card-hover ${isUnread ? "border-indigo-200 dark:border-indigo-800 bg-indigo-50/30 dark:bg-indigo-950/20" : ""}`}
               >
                 <CardContent className="p-4 sm:p-6">
                   <div className="flex items-start gap-3 sm:gap-4">
@@ -230,7 +230,7 @@ export function NotificationList({ notifications }: NotificationListProps) {
                     {/* コンテンツ */}
                     <div className="flex-1 min-w-0">
                       <div className="flex items-start justify-between gap-2 sm:gap-3 mb-2">
-                        <h3 className="text-sm sm:text-base font-semibold text-slate-900">
+                        <h3 className="text-sm sm:text-base font-semibold text-slate-900 dark:text-slate-100">
                           {notification.title}
                         </h3>
                         {isUnread && (
@@ -243,13 +243,13 @@ export function NotificationList({ notifications }: NotificationListProps) {
                         )}
                       </div>
                       {notification.description && (
-                        <p className="text-xs sm:text-sm text-slate-600 mb-3">
+                        <p className="text-xs sm:text-sm text-slate-600 dark:text-slate-400 mb-3">
                           {notification.description}
                         </p>
                       )}
                       {extraMeta && (
                         <div className="mb-3">
-                          <Badge variant="secondary" className="bg-slate-100 text-slate-700 hover:bg-slate-100">
+                          <Badge variant="secondary" className="bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800">
                             {extraMeta}
                           </Badge>
                         </div>

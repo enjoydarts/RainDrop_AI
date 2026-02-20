@@ -60,6 +60,68 @@ export async function generateEmbedding(
 }
 
 /**
+ * 複数テキストのエンベディングを一括生成（最大100テキスト/リクエスト）
+ * 既存要約へのバックフィルなど、大量処理用
+ */
+export async function generateBatchEmbeddings(
+  texts: string[],
+  options?: {
+    apiKey?: string
+    userId?: string
+  }
+): Promise<number[][]> {
+  if (texts.length === 0) return []
+
+  const apiKey = options?.apiKey
+  if (!apiKey) {
+    console.warn("[embeddings] OpenAI API key not set, skipping batch embedding generation")
+    return texts.map(() => [])
+  }
+
+  const BATCH_SIZE = 100
+  const allEmbeddings: number[][] = []
+
+  for (let i = 0; i < texts.length; i += BATCH_SIZE) {
+    const batch = texts.slice(i, i + BATCH_SIZE)
+
+    const response = await fetch("https://api.openai.com/v1/embeddings", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${apiKey}`,
+      },
+      body: JSON.stringify({
+        model: EMBEDDING_MODEL,
+        input: batch,
+        encoding_format: "float",
+      }),
+    })
+
+    if (!response.ok) {
+      const error = await response.text()
+      throw new Error(`OpenAI API error: ${response.status} ${error}`)
+    }
+
+    const data = await response.json()
+
+    if (options?.userId && data.usage) {
+      await trackOpenAIUsage({
+        userId: options.userId,
+        model: EMBEDDING_MODEL,
+        inputTokens: data.usage.total_tokens || 0,
+      }).catch((err) => console.error("[embeddings] Failed to track batch usage:", err))
+    }
+
+    const sorted = (data.data as { index: number; embedding: number[] }[]).sort(
+      (a, b) => a.index - b.index
+    )
+    allEmbeddings.push(...sorted.map((d) => d.embedding))
+  }
+
+  return allEmbeddings
+}
+
+/**
  * コサイン類似度を計算
  */
 export function cosineSimilarity(vecA: number[], vecB: number[]): number {

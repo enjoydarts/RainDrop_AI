@@ -2,9 +2,10 @@ import { auth } from "@/auth"
 import { redirect } from "next/navigation"
 import { withRLS } from "@/db/rls"
 import { raindrops, summaries, apiUsage, users } from "@/db/schema"
-import { count, sum, isNull, and, gte, sql } from "drizzle-orm"
+import { count, sum, isNull, and, gte, sql, desc } from "drizzle-orm"
 import Link from "next/link"
-import { Newspaper, FileText, DollarSign, ChevronRight, ArrowRight, ClipboardList, Zap, Flame, MessageCircle, Check, X, Loader2, Clock } from "lucide-react"
+import { Newspaper, FileText, DollarSign, ChevronRight, ArrowRight, ClipboardList, Zap, Flame, MessageCircle, Check, X, Loader2, Clock, Folder } from "lucide-react"
+import { getRaindropCollections, createCollectionMap } from "@/lib/raindrop-api"
 import { Card, CardContent, CardFooter, CardHeader } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 import { Button } from "@/components/ui/button"
@@ -18,10 +19,10 @@ const TONE_LABELS = {
 } as const
 
 const STATUS_LABELS = {
-  completed: { label: "完了", Icon: Check, className: "bg-green-100 text-green-800 hover:bg-green-100" },
-  failed: { label: "失敗", Icon: X, className: "bg-red-100 text-red-800 hover:bg-red-100" },
-  processing: { label: "処理中", Icon: Loader2, className: "bg-yellow-100 text-yellow-800 hover:bg-yellow-100" },
-  pending: { label: "待機中", Icon: Clock, className: "bg-slate-100 text-slate-800 hover:bg-slate-100" },
+  completed: { label: "完了", Icon: Check, className: "bg-green-100 dark:bg-green-950/50 text-green-800 dark:text-green-200 hover:bg-green-100 dark:hover:bg-green-950/50" },
+  failed: { label: "失敗", Icon: X, className: "bg-red-100 dark:bg-red-950/50 text-red-800 dark:text-red-200 hover:bg-red-100 dark:hover:bg-red-950/50" },
+  processing: { label: "処理中", Icon: Loader2, className: "bg-yellow-100 dark:bg-yellow-950/50 text-yellow-800 dark:text-yellow-200 hover:bg-yellow-100 dark:hover:bg-yellow-950/50" },
+  pending: { label: "待機中", Icon: Clock, className: "bg-slate-100 dark:bg-slate-800 text-slate-800 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-800" },
 } as const
 
 export default async function DashboardPage() {
@@ -34,7 +35,7 @@ export default async function DashboardPage() {
   const userId = user.id!
 
   // RLS対応: 統計情報を取得
-  const { raindropCount, summaryCount, monthlyCost, monthlyUsageByProvider, recentSummaries, statusCounts, nextToRead, budgetUsd } = await withRLS(
+  const { raindropCount, summaryCount, monthlyCost, monthlyUsageByProvider, recentSummaries, statusCounts, nextToRead, budgetUsd, collectionStats, raindropAccessToken } = await withRLS(
     userId,
     async (tx) => {
       // 統計情報を取得（RLSで自動的にユーザーのデータのみ取得）
@@ -116,6 +117,23 @@ export default async function DashboardPage() {
         .orderBy(sql`${raindrops.createdAtRemote} DESC`)
         .limit(5)
 
+      // コレクション別記事数を取得
+      const collectionStats = await tx
+        .select({
+          collectionId: raindrops.collectionId,
+          count: count(),
+        })
+        .from(raindrops)
+        .where(isNull(raindrops.deletedAt))
+        .groupBy(raindrops.collectionId)
+        .orderBy(desc(count()))
+        .limit(6)
+
+      const [raindropUser] = await tx
+        .select({ raindropAccessToken: users.raindropAccessToken })
+        .from(users)
+        .limit(1)
+
       return {
         raindropCount,
         summaryCount,
@@ -125,9 +143,22 @@ export default async function DashboardPage() {
         statusCounts,
         nextToRead,
         budgetUsd: userBudget?.monthlyBudgetUsd ? Number(userBudget.monthlyBudgetUsd) : Number(process.env.DEFAULT_MONTHLY_BUDGET_USD || "0"),
+        collectionStats,
+        raindropAccessToken: raindropUser?.raindropAccessToken,
       }
     }
   )
+
+  // コレクション名をRaindrop APIから取得
+  let collectionMap = new Map<number, string>()
+  if (raindropAccessToken) {
+    try {
+      const collections = await getRaindropCollections(raindropAccessToken)
+      collectionMap = createCollectionMap(collections)
+    } catch {
+      // コレクション名なしで続行
+    }
+  }
 
   const totalCost = Number(monthlyCost?.total || 0)
 
@@ -146,11 +177,11 @@ export default async function DashboardPage() {
   return (
     <div className="space-y-8">
       {/* ウェルカムセクション */}
-      <div className="border-b border-slate-200 pb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">
+      <div className="border-b border-slate-200 dark:border-slate-700 pb-6">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">
           ようこそ、{user.name}さん
         </h1>
-        <p className="mt-3 text-base text-slate-600">
+        <p className="mt-3 text-base text-slate-600 dark:text-slate-400">
           Raindrop.ioから記事を取り込んで、AI要約を生成しましょう
         </p>
       </div>
@@ -163,14 +194,14 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <dt className="text-sm font-medium text-slate-500 mb-2">保存済み記事</dt>
-                <dd className="text-4xl font-bold text-slate-900">{raindropCount.count}</dd>
+                <dd className="text-4xl font-bold text-slate-900 dark:text-slate-100">{raindropCount.count}</dd>
               </div>
-              <div className="flex-shrink-0 rounded-lg bg-slate-100 p-3">
+              <div className="flex-shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 p-3">
                 <Newspaper className="h-7 w-7 text-indigo-600" />
               </div>
             </div>
           </CardContent>
-          <CardFooter className="border-t border-slate-100 bg-slate-50/50 px-6 py-3">
+          <CardFooter className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 px-6 py-3">
             <Link href="/raindrops" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
               記事一覧を見る
               <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -184,14 +215,14 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <dt className="text-sm font-medium text-slate-500 mb-2">生成済み要約</dt>
-                <dd className="text-4xl font-bold text-slate-900">{summaryCount.count}</dd>
+                <dd className="text-4xl font-bold text-slate-900 dark:text-slate-100">{summaryCount.count}</dd>
               </div>
-              <div className="flex-shrink-0 rounded-lg bg-slate-100 p-3">
+              <div className="flex-shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 p-3">
                 <FileText className="h-7 w-7 text-indigo-600" />
               </div>
             </div>
           </CardContent>
-          <CardFooter className="border-t border-slate-100 bg-slate-50/50 px-6 py-3">
+          <CardFooter className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 px-6 py-3">
             <Link href="/summaries" className="text-sm font-semibold text-indigo-600 hover:text-indigo-700 flex items-center gap-1 group">
               要約一覧を見る
               <ChevronRight className="h-4 w-4 transition-transform group-hover:translate-x-1" />
@@ -205,7 +236,7 @@ export default async function DashboardPage() {
             <div className="flex items-center justify-between">
               <div className="flex-1">
                 <dt className="text-sm font-medium text-slate-500 mb-2">今月のAPI利用</dt>
-                <dd className="text-4xl font-bold text-slate-900" suppressHydrationWarning>
+                <dd className="text-4xl font-bold text-slate-900 dark:text-slate-100" suppressHydrationWarning>
                   ${totalCost.toFixed(4)}
                 </dd>
                 {/* プロバイダー別内訳 */}
@@ -213,24 +244,24 @@ export default async function DashboardPage() {
                   {anthropicCost > 0 && (
                     <div className="flex items-center justify-between text-xs" suppressHydrationWarning>
                       <span className="text-slate-500">Claude:</span>
-                      <span className="font-medium text-slate-700">${anthropicCost.toFixed(4)}</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">${anthropicCost.toFixed(4)}</span>
                     </div>
                   )}
                   {openaiCost > 0 && (
                     <div className="flex items-center justify-between text-xs" suppressHydrationWarning>
                       <span className="text-slate-500">OpenAI:</span>
-                      <span className="font-medium text-slate-700">${openaiCost.toFixed(4)}</span>
+                      <span className="font-medium text-slate-700 dark:text-slate-300">${openaiCost.toFixed(4)}</span>
                     </div>
                   )}
                 </div>
               </div>
-              <div className="flex-shrink-0 rounded-lg bg-slate-100 p-3">
+              <div className="flex-shrink-0 rounded-lg bg-slate-100 dark:bg-slate-800 p-3">
                 <DollarSign className="h-7 w-7 text-indigo-600" />
               </div>
             </div>
           </CardContent>
-          <CardFooter className="border-t border-slate-100 bg-slate-50/50 px-6 py-3">
-            <span className="text-sm text-slate-600">
+          <CardFooter className="border-t border-slate-100 dark:border-slate-800 bg-slate-50/50 dark:bg-slate-800/50 px-6 py-3">
+            <span className="text-sm text-slate-600 dark:text-slate-400">
               {new Date().toLocaleDateString('ja-JP', { year: 'numeric', month: 'long' })}
             </span>
           </CardFooter>
@@ -238,12 +269,12 @@ export default async function DashboardPage() {
       </div>
 
       {/* クイックアクション */}
-      <Card className="border-2 border-indigo-200 bg-indigo-50 shadow-sm">
+      <Card className="border-2 border-indigo-200 dark:border-indigo-800 bg-indigo-50 dark:bg-indigo-950/50 shadow-sm">
         <CardContent className="p-8">
           <div className="sm:flex sm:items-center sm:justify-between">
             <div className="flex-1">
-              <h2 className="text-2xl font-bold text-indigo-900">記事を取り込む</h2>
-              <p className="mt-2 text-base text-indigo-700">
+              <h2 className="text-2xl font-bold text-indigo-900 dark:text-indigo-100">記事を取り込む</h2>
+              <p className="mt-2 text-base text-indigo-700 dark:text-indigo-300">
                 Raindrop.ioから最新の記事を同期して、AI要約を生成しましょう
               </p>
             </div>
@@ -260,31 +291,31 @@ export default async function DashboardPage() {
       </Card>
 
       {budgetUsd > 0 && budgetUsageRatio >= 0.8 && (
-        <Card className={`border-2 ${budgetUsageRatio >= 1 ? "border-red-200 bg-red-50" : "border-yellow-200 bg-yellow-50"} shadow-sm`}>
+        <Card className={`border-2 ${budgetUsageRatio >= 1 ? "border-red-200 dark:border-red-800 bg-red-50 dark:bg-red-950/50" : "border-yellow-200 dark:border-yellow-800 bg-yellow-50 dark:bg-yellow-950/50"} shadow-sm`}>
           <CardContent className="p-4">
-            <p className="text-sm font-semibold text-slate-900">月次予算アラート</p>
-            <p className="mt-1 text-sm text-slate-700">
+            <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">月次予算アラート</p>
+            <p className="mt-1 text-sm text-slate-700 dark:text-slate-300">
               ${totalCost.toFixed(4)} / ${budgetUsd.toFixed(2)} 使用中
             </p>
           </CardContent>
         </Card>
       )}
 
-      <Card className="border-2 border-amber-200 bg-amber-50 shadow-sm">
+      <Card className="border-2 border-amber-200 dark:border-amber-800 bg-amber-50 dark:bg-amber-950/50 shadow-sm">
         <CardContent className="p-6">
-          <h2 className="text-lg font-semibold text-amber-900">処理キュー状況</h2>
+          <h2 className="text-lg font-semibold text-amber-900 dark:text-amber-100">処理キュー状況</h2>
           <div className="mt-3 grid grid-cols-3 gap-3 text-sm">
-            <div className="rounded-md bg-white px-3 py-2">
+            <div className="rounded-md bg-white dark:bg-slate-800 px-3 py-2">
               <p className="text-slate-500">処理中</p>
-              <p className="text-lg font-bold text-amber-900">{processingCount}</p>
+              <p className="text-lg font-bold text-amber-900 dark:text-amber-100">{processingCount}</p>
             </div>
-            <div className="rounded-md bg-white px-3 py-2">
+            <div className="rounded-md bg-white dark:bg-slate-800 px-3 py-2">
               <p className="text-slate-500">待機中</p>
-              <p className="text-lg font-bold text-amber-900">{pendingCount}</p>
+              <p className="text-lg font-bold text-amber-900 dark:text-amber-100">{pendingCount}</p>
             </div>
-            <div className="rounded-md bg-white px-3 py-2">
+            <div className="rounded-md bg-white dark:bg-slate-800 px-3 py-2">
               <p className="text-slate-500">失敗</p>
-              <p className="text-lg font-bold text-red-700">{failedCount}</p>
+              <p className="text-lg font-bold text-red-700 dark:text-red-300">{failedCount}</p>
             </div>
           </div>
         </CardContent>
@@ -294,7 +325,7 @@ export default async function DashboardPage() {
       {recentSummaries.length > 0 && (
         <div>
           <div className="mb-6 flex items-center justify-between">
-            <h2 className="text-xl font-semibold text-slate-900">最近の要約</h2>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">最近の要約</h2>
             <Link href="/summaries" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
               すべて見る →
             </Link>
@@ -314,7 +345,7 @@ export default async function DashboardPage() {
                       <div className="space-y-4">
                         {/* ヘッダー: タイトルとステータス */}
                         <div className="flex items-start justify-between gap-3">
-                          <h3 className="flex-1 text-base font-semibold text-slate-900 line-clamp-2">
+                          <h3 className="flex-1 text-base font-semibold text-slate-900 dark:text-slate-100 line-clamp-2">
                             {summary.articleTitle || '無題の記事'}
                           </h3>
                           {(() => {
@@ -334,14 +365,14 @@ export default async function DashboardPage() {
 
                         {/* 要約プレビュー */}
                         {summary.status === 'completed' && summary.summary && (
-                          <p className="text-sm text-slate-600 line-clamp-2">
+                          <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-2">
                             {summary.summary.substring(0, 150)}...
                           </p>
                         )}
 
                         {/* メタ情報 */}
                         <div className="flex items-center gap-3 text-xs text-slate-500">
-                          <Badge variant="secondary" className="bg-indigo-50 text-indigo-700 hover:bg-indigo-50">
+                          <Badge variant="secondary" className="bg-indigo-50 dark:bg-indigo-950/50 text-indigo-700 dark:text-indigo-300 hover:bg-indigo-50 dark:hover:bg-indigo-950/50">
                             <ToneIcon className="h-3 w-3 mr-1" />
                             {toneInfo.label}
                           </Badge>
@@ -364,10 +395,42 @@ export default async function DashboardPage() {
         </div>
       )}
 
+      {/* コレクション別記事数 */}
+      {collectionStats.length > 1 && (
+        <div>
+          <div className="mb-4 flex items-center justify-between">
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">コレクション別</h2>
+            <Link href="/raindrops" className="text-sm font-medium text-indigo-600 hover:text-indigo-500">
+              記事一覧へ →
+            </Link>
+          </div>
+          <div className="grid grid-cols-2 sm:grid-cols-3 gap-3">
+            {collectionStats.map((col) => {
+              const name = col.collectionId
+                ? (collectionMap.get(col.collectionId) || `コレクション ${col.collectionId}`)
+                : "未分類"
+              return (
+                <Link
+                  key={col.collectionId ?? "null"}
+                  href="/raindrops"
+                  className="flex items-center gap-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors"
+                >
+                  <Folder className="h-4 w-4 text-indigo-500 flex-shrink-0" />
+                  <div className="min-w-0 flex-1">
+                    <p className="text-sm font-medium text-slate-900 dark:text-slate-100 truncate">{name}</p>
+                    <p className="text-xs text-slate-500">{col.count}件</p>
+                  </div>
+                </Link>
+              )
+            })}
+          </div>
+        </div>
+      )}
+
       {nextToRead.length > 0 && (
         <div>
           <div className="mb-4">
-            <h2 className="text-xl font-semibold text-slate-900">次に読む候補</h2>
+            <h2 className="text-xl font-semibold text-slate-900 dark:text-slate-100">次に読む候補</h2>
             <p className="text-sm text-slate-500">未要約の記事を優先度順に表示しています</p>
           </div>
           <div className="space-y-2">
@@ -375,10 +438,10 @@ export default async function DashboardPage() {
               <Link
                 key={item.id}
                 href="/raindrops"
-                className="flex items-center justify-between rounded-lg border border-slate-200 bg-white px-4 py-3 hover:bg-slate-50"
+                className="flex items-center justify-between rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 px-4 py-3 hover:bg-slate-50 dark:hover:bg-slate-800"
               >
                 <div>
-                  <p className="text-sm font-semibold text-slate-900">{item.title}</p>
+                  <p className="text-sm font-semibold text-slate-900 dark:text-slate-100">{item.title}</p>
                   <p className="text-xs text-slate-500">
                     優先度スコア: {Math.max(1, 100 - index * 10)}
                   </p>

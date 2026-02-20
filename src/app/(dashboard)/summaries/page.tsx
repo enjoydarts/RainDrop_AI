@@ -10,6 +10,7 @@ import { Button } from "@/components/ui/button"
 import { RefreshButton } from "@/components/RefreshButton"
 import { ClassifyThemesButton } from "@/components/ClassifyThemesButton"
 import { RegenerateThemesButton } from "@/components/RegenerateThemesButton"
+import { ExportButton } from "@/components/ExportButton"
 import { SearchableList } from "./searchable-list"
 import { SemanticSearch } from "@/components/SemanticSearch"
 
@@ -50,6 +51,7 @@ export default async function SummariesPage({
         articleCover: raindrops.cover,
         articleLink: raindrops.link,
         articleExcerpt: raindrops.excerpt,
+        articleTags: raindrops.tags,
       })
       .from(summaries)
       .innerJoin(
@@ -75,12 +77,13 @@ export default async function SummariesPage({
 
   return (
     <div className="px-4 sm:px-0">
-      <div className="mb-8 sm:flex items-center sm:justify-between border-b border-slate-200 pb-6">
+      <div className="mb-8 sm:flex items-center sm:justify-between border-b border-slate-200 dark:border-slate-700 pb-6">
         <div>
-          <h1 className="text-3xl font-bold tracking-tight text-slate-900">要約一覧</h1>
-          <p className="mt-2 text-sm text-slate-600">{totalCount}件の要約</p>
+          <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">要約一覧</h1>
+          <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">{totalCount}件の要約</p>
         </div>
-        <div className="mt-4 sm:mt-0 sm:ml-4 flex gap-2">
+        <div className="mt-4 sm:mt-0 sm:ml-4 flex flex-wrap gap-2">
+          <ExportButton />
           <ClassifyThemesButton />
           <RegenerateThemesButton />
           <RefreshButton />
@@ -90,10 +93,10 @@ export default async function SummariesPage({
       {items.length === 0 ? (
         <Card>
           <div className="px-4 py-16 text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+            <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
               <FileText className="h-6 w-6 text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-slate-900 mb-2">まだ要約が生成されていません</h3>
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">まだ要約が生成されていません</h3>
             <p className="text-sm text-slate-500 mb-4">記事を取り込んで、要約を生成してみましょう</p>
             <Button asChild className="bg-indigo-600 hover:bg-indigo-700">
               <Link href="/raindrops">
@@ -107,13 +110,13 @@ export default async function SummariesPage({
         <div className="space-y-8">
           {/* AI意味検索 */}
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">AI意味検索</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">AI意味検索</h2>
             <SemanticSearch />
           </div>
 
           {/* 通常の検索とフィルター */}
           <div>
-            <h2 className="text-lg font-semibold text-slate-900 mb-4">すべての要約</h2>
+            <h2 className="text-lg font-semibold text-slate-900 dark:text-slate-100 mb-4">すべての要約</h2>
             <SearchableList items={items} />
           </div>
           <div className="flex items-center justify-between">
@@ -124,7 +127,7 @@ export default async function SummariesPage({
               {prevPage ? (
                 <Link
                   href={`/summaries?page=${prevPage}`}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                  className="rounded-md border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   前へ
                 </Link>
@@ -132,7 +135,7 @@ export default async function SummariesPage({
               {nextPage ? (
                 <Link
                   href={`/summaries?page=${nextPage}`}
-                  className="rounded-md border border-slate-300 px-3 py-1.5 text-sm text-slate-700 hover:bg-slate-50"
+                  className="rounded-md border border-slate-300 dark:border-slate-600 px-3 py-1.5 text-sm text-slate-700 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800"
                 >
                   次へ
                 </Link>

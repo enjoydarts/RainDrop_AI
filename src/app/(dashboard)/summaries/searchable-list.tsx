@@ -3,7 +3,7 @@
 import { useEffect, useState, useMemo } from "react"
 import Link from "next/link"
 import Image from "next/image"
-import { Search, X, Check, Loader2, FileText, ClipboardList, Zap, Flame, MessageCircle, Clock } from "lucide-react"
+import { Search, X, Check, Loader2, FileText, ClipboardList, Zap, Flame, MessageCircle, Clock, Tag } from "lucide-react"
 import type { LucideIcon } from "lucide-react"
 import { Input } from "@/components/ui/input"
 import { Card } from "@/components/ui/card"
@@ -38,6 +38,7 @@ interface Summary {
   articleCover: string | null
   articleLink: string | null
   articleExcerpt: string | null
+  articleTags: unknown
 }
 
 interface SearchableListProps {
@@ -50,6 +51,7 @@ export function SearchableList({ items }: SearchableListProps) {
   const [selectedTone, setSelectedTone] = useState<string | null>(null)
   const [selectedTheme, setSelectedTheme] = useState<string | null>(null)
   const [selectedStatus, setSelectedStatus] = useState<string | null>(null)
+  const [selectedTag, setSelectedTag] = useState<string | null>(null)
   const [currentPage, setCurrentPage] = useState(1)
   const itemsPerPage = 12
 
@@ -84,6 +86,21 @@ export function SearchableList({ items }: SearchableListProps) {
     return Array.from(themes).sort()
   }, [items])
 
+  // itemsから動的にタグ一覧を抽出
+  const availableTags = useMemo(() => {
+    const tagCountMap = new Map<string, number>()
+    items.forEach((item) => {
+      if (item.articleTags && Array.isArray(item.articleTags)) {
+        (item.articleTags as string[]).forEach((tag) => {
+          tagCountMap.set(tag, (tagCountMap.get(tag) || 0) + 1)
+        })
+      }
+    })
+    return Array.from(tagCountMap.entries())
+      .sort((a, b) => b[1] - a[1])
+      .map(([tag]) => tag)
+  }, [items])
+
   // 検索とフィルタリング
   const filteredItems = useMemo(() => {
     let result = items
@@ -96,6 +113,14 @@ export function SearchableList({ items }: SearchableListProps) {
     // テーマフィルター
     if (selectedTheme) {
       result = result.filter((item) => item.theme === selectedTheme)
+    }
+
+    // タグフィルター
+    if (selectedTag) {
+      result = result.filter((item) => {
+        if (!item.articleTags || !Array.isArray(item.articleTags)) return false
+        return (item.articleTags as string[]).includes(selectedTag)
+      })
     }
 
     // ステータスフィルター
@@ -145,7 +170,7 @@ export function SearchableList({ items }: SearchableListProps) {
   // フィルター変更時にページを1にリセット
   useMemo(() => {
     setCurrentPage(1)
-  }, [searchQuery, selectedTone, selectedTheme, selectedStatus])
+  }, [searchQuery, selectedTone, selectedTheme, selectedStatus, selectedTag])
 
   return (
     <div className="space-y-4">
@@ -204,7 +229,7 @@ export function SearchableList({ items }: SearchableListProps) {
       {availableThemes.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center justify-between">
-            <h3 className="text-sm font-medium text-slate-700">テーマで絞り込み</h3>
+            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300">テーマで絞り込み</h3>
             <span className="text-xs text-slate-500">{availableThemes.length}個のテーマ</span>
           </div>
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
@@ -226,6 +251,40 @@ export function SearchableList({ items }: SearchableListProps) {
               >
                 {theme}
               </Button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {/* タグフィルター */}
+      {availableTags.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center justify-between">
+            <h3 className="text-sm font-medium text-slate-700 dark:text-slate-300">タグで絞り込み</h3>
+            {selectedTag && (
+              <button
+                onClick={() => setSelectedTag(null)}
+                className="text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-200 flex items-center gap-1"
+              >
+                <X className="h-3 w-3" />
+                解除
+              </button>
+            )}
+          </div>
+          <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-thin">
+            {availableTags.map((tag) => (
+              <button
+                key={tag}
+                onClick={() => setSelectedTag(selectedTag === tag ? null : tag)}
+                className={`inline-flex items-center gap-1 px-3 py-1 rounded-full text-xs font-medium border flex-shrink-0 transition-colors ${
+                  selectedTag === tag
+                    ? "bg-teal-600 text-white border-teal-600"
+                    : "bg-white dark:bg-slate-900 text-slate-600 dark:text-slate-400 border-slate-200 dark:border-slate-700 hover:border-teal-300"
+                }`}
+              >
+                <Tag className="h-3 w-3" />
+                {tag}
+              </button>
             ))}
           </div>
         </div>
@@ -263,8 +322,8 @@ export function SearchableList({ items }: SearchableListProps) {
       </div>
 
       {/* 検索・フィルター結果件数 */}
-      {(searchQuery || selectedTone || selectedStatus) && (
-        <div className="text-sm text-slate-600">
+      {(searchQuery || selectedTone || selectedStatus || selectedTag) && (
+        <div className="text-sm text-slate-600 dark:text-slate-400">
           {filteredItems.length}件の要約が見つかりました
         </div>
       )}
@@ -273,10 +332,10 @@ export function SearchableList({ items }: SearchableListProps) {
       {paginatedItems.length === 0 ? (
         <Card>
           <div className="px-4 py-16 text-center">
-            <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 flex items-center justify-center mb-4">
+            <div className="mx-auto h-12 w-12 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center mb-4">
               <Search className="h-6 w-6 text-slate-400" />
             </div>
-            <h3 className="text-base font-semibold text-slate-900 mb-2">
+            <h3 className="text-base font-semibold text-slate-900 dark:text-slate-100 mb-2">
               検索結果が見つかりませんでした
             </h3>
             <p className="text-sm text-slate-500 max-w-sm mx-auto">
@@ -290,11 +349,11 @@ export function SearchableList({ items }: SearchableListProps) {
             {paginatedItems.map((item) => (
             <div
               key={item.id}
-              className="group overflow-hidden rounded-xl border border-slate-200 bg-white shadow-sm card-hover"
+              className="group overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm card-hover"
             >
               {/* カバー画像 */}
               {item.articleCover ? (
-                <div className="relative aspect-[16/9] overflow-hidden bg-slate-100">
+                <div className="relative aspect-[16/9] overflow-hidden bg-slate-100 dark:bg-slate-800">
                   <Image
                     src={item.articleCover}
                     alt=""
@@ -342,7 +401,7 @@ export function SearchableList({ items }: SearchableListProps) {
                   </div>
                 </div>
               ) : (
-                <div className="relative aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                <div className="relative aspect-[16/9] bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                   <FileText className="h-12 w-12 text-slate-300" />
                   {/* バッジ */}
                   <div className="absolute top-3 left-3 right-3 flex items-start justify-between gap-2">
@@ -390,7 +449,7 @@ export function SearchableList({ items }: SearchableListProps) {
               <div className="p-5">
                 {/* 記事タイトル */}
                 <Link href={`/summaries/${item.id}`}>
-                  <h3 className="text-base font-bold text-slate-900 line-clamp-2 mb-2 hover:text-indigo-600 transition-colors cursor-pointer">
+                  <h3 className="text-base font-bold text-slate-900 dark:text-slate-100 line-clamp-2 mb-2 hover:text-indigo-600 transition-colors cursor-pointer">
                     {item.articleTitle}
                   </h3>
                 </Link>
@@ -398,7 +457,7 @@ export function SearchableList({ items }: SearchableListProps) {
                 {/* テーマバッジ */}
                 {item.theme && (
                   <div className="mb-2">
-                    <Badge variant="outline" className="bg-purple-50 text-purple-700 border-purple-200">
+                    <Badge variant="outline" className="bg-purple-50 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300 border-purple-200">
                       {item.theme}
                     </Badge>
                   </div>
@@ -406,13 +465,13 @@ export function SearchableList({ items }: SearchableListProps) {
 
                 {/* 要約プレビュー */}
                 {item.status === "completed" && item.summary && (
-                  <p className="text-sm text-slate-600 line-clamp-3 mb-3">{item.summary}</p>
+                  <p className="text-sm text-slate-600 dark:text-slate-400 line-clamp-3 mb-3">{item.summary}</p>
                 )}
 
                 {/* エラーメッセージ */}
                 {item.status === "failed" && item.error && (
-                  <div className="rounded-md bg-red-50 border border-red-200 px-3 py-2 mb-3">
-                    <p className="text-xs text-red-800">{item.error}</p>
+                  <div className="rounded-md bg-red-50 dark:bg-red-950/50 border border-red-200 dark:border-red-800 px-3 py-2 mb-3">
+                    <p className="text-xs text-red-800 dark:text-red-200">{item.error}</p>
                   </div>
                 )}
 

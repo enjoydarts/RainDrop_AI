@@ -42,6 +42,10 @@ const OPENAI_PRICING = {
     input: 0.10 / 1_000_000, // $0.100 per 1M tokens
     output: 0,
   },
+  "gpt-4o-mini": {
+    input: 0.15 / 1_000_000, // $0.150 per 1M tokens
+    output: 0.60 / 1_000_000, // $0.600 per 1M tokens
+  },
 } as const
 
 /**
@@ -67,7 +71,8 @@ export function calculateAnthropicCost(
  */
 export function calculateOpenAICost(
   model: string,
-  inputTokens: number
+  inputTokens: number,
+  outputTokens: number = 0
 ): number {
   const pricing = OPENAI_PRICING[model as keyof typeof OPENAI_PRICING]
 
@@ -76,7 +81,7 @@ export function calculateOpenAICost(
     return 0
   }
 
-  return inputTokens * pricing.input
+  return inputTokens * pricing.input + outputTokens * pricing.output
 }
 
 /**
@@ -125,11 +130,12 @@ export async function trackOpenAIUsage(params: {
   summaryId?: string
   model: string
   inputTokens: number
+  outputTokens?: number
 }): Promise<void> {
-  const { userId, summaryId, model, inputTokens } = params
+  const { userId, summaryId, model, inputTokens, outputTokens = 0 } = params
   const { db } = await import("@/db")
 
-  const cost = calculateOpenAICost(model, inputTokens)
+  const cost = calculateOpenAICost(model, inputTokens, outputTokens)
 
   await db.insert(apiUsage).values({
     userId,
@@ -137,7 +143,7 @@ export async function trackOpenAIUsage(params: {
     apiProvider: "openai",
     model,
     inputTokens,
-    outputTokens: 0, // Embeddingsは出力トークンなし
+    outputTokens,
     costUsd: cost.toFixed(6),
   })
 }

@@ -22,8 +22,8 @@ export function RelatedSummaries({ summaries }: RelatedSummariesProps) {
   }
 
   return (
-    <div className="mt-12 pt-8 border-t border-slate-200">
-      <h2 className="text-2xl font-bold text-slate-900 mb-6">関連記事</h2>
+    <div className="mt-12 pt-8 border-t border-slate-200 dark:border-slate-700">
+      <h2 className="text-2xl font-bold text-slate-900 dark:text-slate-100 mb-6">関連記事</h2>
       <div className="grid grid-cols-1 gap-4 md:grid-cols-3">
         {summaries.map((summary) => {
           const toneInfo = TONE_LABELS[summary.tone] || { label: summary.tone, Icon: FileText }
@@ -35,7 +35,7 @@ export function RelatedSummaries({ summaries }: RelatedSummariesProps) {
                 <CardContent className="p-0">
                   {/* カバー画像 */}
                   {summary.articleCover ? (
-                    <div className="relative aspect-[16/9] overflow-hidden bg-slate-100">
+                    <div className="relative aspect-[16/9] overflow-hidden bg-slate-100 dark:bg-slate-800">
                       <Image
                         src={summary.articleCover}
                         alt=""
@@ -44,17 +44,17 @@ export function RelatedSummaries({ summaries }: RelatedSummariesProps) {
                       />
                     </div>
                   ) : (
-                    <div className="aspect-[16/9] bg-slate-100 flex items-center justify-center">
+                    <div className="aspect-[16/9] bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
                       <FileText className="h-12 w-12 text-slate-300" />
                     </div>
                   )}
 
                   {/* コンテンツ */}
                   <div className="p-4">
-                    <h3 className="text-sm font-semibold text-slate-900 line-clamp-2 mb-2">
+                    <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100 line-clamp-2 mb-2">
                       {summary.articleTitle}
                     </h3>
-                    <p className="text-xs text-slate-600 line-clamp-2 mb-3">
+                    <p className="text-xs text-slate-600 dark:text-slate-400 line-clamp-2 mb-3">
                       {summary.summary}
                     </p>
                     <div className="flex items-center justify-between">
@@ -69,7 +69,7 @@ export function RelatedSummaries({ summaries }: RelatedSummariesProps) {
                       )}
                     </div>
                     {/* 類似度表示（デバッグ用、後で削除可） */}
-                    <div className="mt-2 text-xs text-slate-400">
+                    <div className="mt-2 text-xs text-slate-400 dark:text-slate-500">
                       類似度: {(summary.similarity * 100).toFixed(1)}%
                     </div>
                   </div>

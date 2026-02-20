@@ -380,3 +380,31 @@ export const notifications = pgTable(
 
 export type Notification = typeof notifications.$inferSelect
 export type NewNotification = typeof notifications.$inferInsert
+
+/**
+ * ダイジェストテーブル
+ * 週次/月次の読書トレンドをAIが分析・まとめた記録
+ */
+export const digests = pgTable(
+  "digests",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    userId: text("user_id")
+      .notNull()
+      .references(() => users.id, { onDelete: "cascade" }),
+    period: text("period").notNull(), // "weekly" | "monthly"
+    periodStart: timestamp("period_start", { withTimezone: true }).notNull(),
+    periodEnd: timestamp("period_end", { withTimezone: true }).notNull(),
+    content: text("content").notNull(), // LLMが生成したダイジェスト
+    summaryCount: integer("summary_count").notNull().default(0),
+    topThemes: jsonb("top_themes").default([]).notNull(), // string[]
+    createdAt: timestamp("created_at", { withTimezone: true }).defaultNow().notNull(),
+  },
+  (table) => ({
+    userIdIdx: index("digests_user_id_idx").on(table.userId),
+    periodIdx: index("digests_period_idx").on(table.userId, table.period, table.periodStart),
+  })
+)
+
+export type Digest = typeof digests.$inferSelect
+export type NewDigest = typeof digests.$inferInsert

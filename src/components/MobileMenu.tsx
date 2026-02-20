@@ -7,6 +7,8 @@ import {
   LayoutDashboard,
   Newspaper,
   FileText,
+  Tag,
+  BookOpen,
   BriefcaseBusiness,
   BarChart3,
   Bell,
@@ -46,6 +48,16 @@ export function MobileMenu({ userName, userEmail }: MobileMenuProps) {
       href: "/summaries",
       icon: FileText,
       label: "要約一覧",
+    },
+    {
+      href: "/themes",
+      icon: Tag,
+      label: "テーマ管理",
+    },
+    {
+      href: "/digests",
+      icon: BookOpen,
+      label: "ダイジェスト",
     },
     {
       href: "/jobs",
@@ -88,8 +100,8 @@ export function MobileMenu({ userName, userEmail }: MobileMenuProps) {
         </SheetHeader>
         <div className="mt-8 flex flex-col space-y-4">
           {/* ユーザー情報 */}
-          <div className="pb-4 border-b border-slate-200">
-            <p className="text-sm text-slate-700 font-medium">
+          <div className="pb-4 border-b border-slate-200 dark:border-slate-700">
+            <p className="text-sm text-slate-700 dark:text-slate-300 font-medium">
               {userName || userEmail}
             </p>
           </div>
@@ -103,7 +115,7 @@ export function MobileMenu({ userName, userEmail }: MobileMenuProps) {
                   key={item.href}
                   href={item.href}
                   onClick={() => setOpen(false)}
-                  className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-slate-700 hover:bg-slate-100 hover:text-indigo-600 transition-colors"
+                  className="flex items-center gap-3 rounded-lg px-3 py-3 text-sm font-medium text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-indigo-600 transition-colors"
                 >
                   <Icon className="h-5 w-5" />
                   {item.label}
@@ -113,12 +125,12 @@ export function MobileMenu({ userName, userEmail }: MobileMenuProps) {
           </nav>
 
           {/* ログアウト */}
-          <div className="pt-4 border-t border-slate-200">
+          <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
             <form action={handleSignOut}>
               <Button
                 type="submit"
                 variant="ghost"
-                className="w-full justify-start text-slate-700 hover:bg-slate-100 hover:text-red-600"
+                className="w-full justify-start text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 hover:text-red-600"
               >
                 <LogOut className="h-5 w-5 mr-3" />
                 ログアウト

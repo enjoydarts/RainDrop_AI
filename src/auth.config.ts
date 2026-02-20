@@ -4,6 +4,17 @@ import type { NextAuthConfig } from "next-auth"
  * Edge Runtime対応のNextAuth設定
  * ミドルウェアで使用
  */
+const PROTECTED_PATHS = [
+  "/dashboard",
+  "/raindrops",
+  "/summaries",
+  "/themes",
+  "/jobs",
+  "/stats",
+  "/notifications",
+  "/settings",
+]
+
 export const authConfig: NextAuthConfig = {
   pages: {
     signIn: "/login",
@@ -11,15 +22,13 @@ export const authConfig: NextAuthConfig = {
   callbacks: {
     authorized({ auth, request: { nextUrl } }) {
       const isLoggedIn = !!auth?.user
-      const isOnDashboard = nextUrl.pathname.startsWith("/dashboard")
+      const isProtected = PROTECTED_PATHS.some((path) =>
+        nextUrl.pathname.startsWith(path)
+      )
 
-      // 必要最小限のログのみ出力（個人情報を含まない）
-      if (isOnDashboard || !isLoggedIn) {
-        console.log("[middleware][authorized] Path:", nextUrl.pathname, "| Logged in:", isLoggedIn)
-      }
-
-      if (isOnDashboard) {
-        return isLoggedIn
+      if (isProtected && !isLoggedIn) {
+        console.log("[middleware][authorized] Redirecting to login:", nextUrl.pathname)
+        return false
       }
 
       return true

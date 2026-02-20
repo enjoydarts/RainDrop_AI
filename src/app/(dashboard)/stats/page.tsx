@@ -8,10 +8,10 @@ import { BudgetSettings } from "@/components/BudgetSettings"
 import { TrendSection } from "./trend-section"
 
 const TONE_LABELS = {
-  neutral: { label: "客観的", Icon: ClipboardList, color: "bg-slate-100 text-slate-700" },
-  snarky: { label: "毒舌", Icon: Zap, color: "bg-purple-100 text-purple-700" },
-  enthusiastic: { label: "熱量高め", Icon: Flame, color: "bg-red-100 text-red-700" },
-  casual: { label: "カジュアル", Icon: MessageCircle, color: "bg-blue-100 text-blue-700" },
+  neutral: { label: "客観的", Icon: ClipboardList, color: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300" },
+  snarky: { label: "毒舌", Icon: Zap, color: "bg-purple-100 dark:bg-purple-950/50 text-purple-700 dark:text-purple-300" },
+  enthusiastic: { label: "熱量高め", Icon: Flame, color: "bg-red-100 dark:bg-red-950/50 text-red-700 dark:text-red-300" },
+  casual: { label: "カジュアル", Icon: MessageCircle, color: "bg-blue-100 dark:bg-blue-950/50 text-blue-700 dark:text-blue-300" },
 } as const
 
 type ToneKey = keyof typeof TONE_LABELS
@@ -627,26 +627,26 @@ export default async function StatsPage() {
 
   return (
     <div className="px-4 sm:px-0">
-      <div className="mb-8 border-b border-slate-200 pb-6">
-        <h1 className="text-3xl font-bold tracking-tight text-slate-900">統計</h1>
-        <p className="mt-2 text-sm text-slate-600">記事と要約の統計情報</p>
+      <div className="mb-8 border-b border-slate-200 dark:border-slate-700 pb-6">
+        <h1 className="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-100">統計</h1>
+        <p className="mt-2 text-sm text-slate-600 dark:text-slate-400">記事と要約の統計情報</p>
       </div>
 
       <div className="mb-8">
         <BudgetSettings initialBudgetUsd={monthlyBudgetUsd} />
       </div>
 
-      <div className="mb-8 rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
+      <div className="mb-8 rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-bold text-slate-900">予算進捗と月末予測</h2>
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">予算進捗と月末予測</h2>
           <span className="text-xs text-slate-500">JST基準</span>
         </div>
         <div className="mt-4 space-y-3">
           <div className="flex items-center justify-between text-sm">
-            <span className="text-slate-600">現在の使用額</span>
-            <span className="font-semibold text-slate-900">${totalCost.toFixed(4)}</span>
+            <span className="text-slate-600 dark:text-slate-400">現在の使用額</span>
+            <span className="font-semibold text-slate-900 dark:text-slate-100">${totalCost.toFixed(4)}</span>
           </div>
-          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100">
+          <div className="h-2.5 w-full overflow-hidden rounded-full bg-slate-100 dark:bg-slate-800">
             <div
               className={`h-full rounded-full ${
                 budgetProgressPct >= 100
@@ -658,13 +658,13 @@ export default async function StatsPage() {
               style={{ width: `${budgetProgressPct}%` }}
             />
           </div>
-          <div className="flex items-center justify-between text-xs text-slate-500">
+          <div className="flex items-center justify-between text-xs text-slate-500 dark:text-slate-400">
             <span>予算: ${monthlyBudgetUsd.toFixed(2)}</span>
             <span>{budgetProgressPct.toFixed(1)}%</span>
           </div>
 
           <div className="pt-2 text-sm">
-            <span className="text-slate-600">月末予測: </span>
+            <span className="text-slate-600 dark:text-slate-400">月末予測: </span>
             <span
               className={`font-semibold ${
                 forecastProgressPct >= 100
@@ -676,39 +676,39 @@ export default async function StatsPage() {
             >
               ${forecastMonthlyCost.toFixed(4)}
             </span>
-            <span className="ml-2 text-xs text-slate-500">({forecastProgressPct.toFixed(1)}% of budget)</span>
+            <span className="ml-2 text-xs text-slate-500 dark:text-slate-400">({forecastProgressPct.toFixed(1)}% of budget)</span>
           </div>
         </div>
       </div>
 
       <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-4 mb-8">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-600">総記事数</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{stats.totalRaindrops}</p>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">総記事数</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalRaindrops}</p>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-600">総要約数</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{stats.totalSummaries}</p>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">総要約数</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalSummaries}</p>
           <div className="mt-2">
             <TrendDelta value={summaryDelta} />
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-600">今月のコスト</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">${totalCost.toFixed(4)}</p>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">今月のコスト</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">${totalCost.toFixed(4)}</p>
           <div className="mt-2 space-y-0.5">
             {anthropicCost > 0 && (
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">Claude:</span>
-                <span className="font-medium text-slate-700">${anthropicCost.toFixed(4)}</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">${anthropicCost.toFixed(4)}</span>
               </div>
             )}
             {openaiCost > 0 && (
               <div className="flex items-center justify-between text-xs">
                 <span className="text-slate-500">OpenAI:</span>
-                <span className="font-medium text-slate-700">${openaiCost.toFixed(4)}</span>
+                <span className="font-medium text-slate-700 dark:text-slate-300">${openaiCost.toFixed(4)}</span>
               </div>
             )}
           </div>
@@ -717,9 +717,9 @@ export default async function StatsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <p className="text-sm font-medium text-slate-600">30日平均評価</p>
-          <p className="mt-1 text-2xl font-bold text-slate-900">{currentTrend.avgRating.toFixed(2)}</p>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <p className="text-sm font-medium text-slate-600 dark:text-slate-400">30日平均評価</p>
+          <p className="mt-1 text-2xl font-bold text-slate-900 dark:text-slate-100">{currentTrend.avgRating.toFixed(2)}</p>
           <div className="mt-2">
             <TrendDelta value={ratingDelta} />
           </div>
@@ -729,14 +729,14 @@ export default async function StatsPage() {
       <TrendSection toneFilters={toneFilters} trendSeriesByTone={trendSeriesByTone} />
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2 mb-8">
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">トーン別要約数</h2>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">トーン別要約数</h2>
           <div className="space-y-3">
             {summariesByTone.map((item) => {
               const toneInfo = TONE_LABELS[item.tone as ToneKey] || {
                 label: item.tone,
                 Icon: ClipboardList,
-                color: "bg-slate-100 text-slate-700",
+                color: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
               }
               const ToneIcon = toneInfo.Icon
               const percentage = stats.totalSummaries > 0 ? (item.count / stats.totalSummaries) * 100 : 0
@@ -750,13 +750,13 @@ export default async function StatsPage() {
                       <ToneIcon className="h-3 w-3" />
                       {toneInfo.label}
                     </span>
-                    <span className="text-sm text-slate-600">{item.count}件</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{item.count}件</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-200">
+                    <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                       <div className="h-full rounded-full bg-indigo-600" style={{ width: `${percentage}%` }} />
                     </div>
-                    <span className="w-12 text-right text-sm font-medium text-slate-900">
+                    <span className="w-12 text-right text-sm font-medium text-slate-900 dark:text-slate-100">
                       {percentage.toFixed(0)}%
                     </span>
                   </div>
@@ -766,8 +766,8 @@ export default async function StatsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white p-6 shadow-sm">
-          <h2 className="text-lg font-bold text-slate-900 mb-4">評価分布</h2>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-6 shadow-sm">
+          <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4">評価分布</h2>
           <div className="space-y-3">
             {[5, 4, 3, 2, 1].map((rating) => {
               const data = ratingDistribution.find((r) => r.rating === rating)
@@ -779,13 +779,13 @@ export default async function StatsPage() {
                 <div key={rating} className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
                     <span className="text-sm text-yellow-400">{"★".repeat(rating)}{"☆".repeat(5 - rating)}</span>
-                    <span className="text-sm text-slate-600">{count}件</span>
+                    <span className="text-sm text-slate-600 dark:text-slate-400">{count}件</span>
                   </div>
                   <div className="flex items-center gap-2">
-                    <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-200">
+                    <div className="h-2 w-32 overflow-hidden rounded-full bg-slate-200 dark:bg-slate-700">
                       <div className="h-full rounded-full bg-yellow-400" style={{ width: `${percentage}%` }} />
                     </div>
-                    <span className="w-12 text-right text-sm font-medium text-slate-900">
+                    <span className="w-12 text-right text-sm font-medium text-slate-900 dark:text-slate-100">
                       {percentage.toFixed(0)}%
                     </span>
                   </div>
@@ -797,25 +797,25 @@ export default async function StatsPage() {
       </div>
 
       <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-6 py-4">
-            <h2 className="text-lg font-bold text-slate-900">最近の要約</h2>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="border-b border-slate-200 dark:border-slate-700 px-6 py-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">最近の要約</h2>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {recentSummaries.map((item) => {
               const toneInfo = TONE_LABELS[item.tone as ToneKey] || {
                 label: item.tone,
                 Icon: ClipboardList,
-                color: "bg-slate-100 text-slate-700",
+                color: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
               }
               const ToneIcon = toneInfo.Icon
 
               return (
-                <div key={item.id} className="px-6 py-4 transition-colors hover:bg-slate-50">
+                <div key={item.id} className="px-6 py-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
                   <div className="flex items-start justify-between gap-4">
                     <div className="min-w-0 flex-1">
-                      <h3 className="line-clamp-1 text-sm font-medium text-slate-900">{item.articleTitle}</h3>
-                      <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
+                      <h3 className="line-clamp-1 text-sm font-medium text-slate-900 dark:text-slate-100">{item.articleTitle}</h3>
+                      <div className="mt-2 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                         <span className="inline-flex items-center gap-1">
                           <ToneIcon className="h-3 w-3" />
                           {toneInfo.label}
@@ -826,7 +826,7 @@ export default async function StatsPage() {
                         {item.rating && <span className="text-yellow-400">{"★".repeat(item.rating)}</span>}
                       </div>
                     </div>
-                    <span className="whitespace-nowrap text-xs text-slate-500">
+                    <span className="whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
                       {new Date(item.createdAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}
                     </span>
                   </div>
@@ -836,13 +836,13 @@ export default async function StatsPage() {
           </div>
         </div>
 
-        <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
-          <div className="border-b border-slate-200 px-6 py-4">
-            <h2 className="text-lg font-bold text-slate-900">直近7日の低評価要約</h2>
+        <div className="rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm">
+          <div className="border-b border-slate-200 dark:border-slate-700 px-6 py-4">
+            <h2 className="text-lg font-bold text-slate-900 dark:text-slate-100">直近7日の低評価要約</h2>
           </div>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-slate-100 dark:divide-slate-800">
             {lowRatedSummaries.length === 0 && (
-              <div className="px-6 py-8 text-center text-sm text-slate-500">
+              <div className="px-6 py-8 text-center text-sm text-slate-500 dark:text-slate-400">
                 直近7日で低評価（★1〜2）の要約はありません
               </div>
             )}
@@ -850,16 +850,16 @@ export default async function StatsPage() {
               const toneInfo = TONE_LABELS[item.tone as ToneKey] || {
                 label: item.tone,
                 Icon: ClipboardList,
-                color: "bg-slate-100 text-slate-700",
+                color: "bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-300",
               }
               const ToneIcon = toneInfo.Icon
 
               return (
-                <div key={item.id} className="px-6 py-4 transition-colors hover:bg-slate-50">
+                <div key={item.id} className="px-6 py-4 transition-colors hover:bg-slate-50 dark:hover:bg-slate-800">
                   <div className="flex items-start justify-between gap-3">
                     <div className="min-w-0 flex-1">
-                      <h3 className="line-clamp-1 text-sm font-medium text-slate-900">{item.articleTitle}</h3>
-                      <div className="mt-2 flex items-center gap-3 text-xs text-slate-500">
+                      <h3 className="line-clamp-1 text-sm font-medium text-slate-900 dark:text-slate-100">{item.articleTitle}</h3>
+                      <div className="mt-2 flex items-center gap-3 text-xs text-slate-500 dark:text-slate-400">
                         <span className="inline-flex items-center gap-1">
                           <ToneIcon className="h-3 w-3" />
                           {toneInfo.label}
@@ -867,10 +867,10 @@ export default async function StatsPage() {
                         <span className="text-rose-600">{"★".repeat(item.rating || 0)}</span>
                       </div>
                       {item.userFeedback && (
-                        <p className="mt-2 line-clamp-2 text-xs text-slate-600">{item.userFeedback}</p>
+                        <p className="mt-2 line-clamp-2 text-xs text-slate-600 dark:text-slate-400">{item.userFeedback}</p>
                       )}
                     </div>
-                    <span className="whitespace-nowrap text-xs text-slate-500">
+                    <span className="whitespace-nowrap text-xs text-slate-500 dark:text-slate-400">
                       {new Date(item.updatedAt).toLocaleDateString("ja-JP", { timeZone: "Asia/Tokyo" })}
                     </span>
                   </div>

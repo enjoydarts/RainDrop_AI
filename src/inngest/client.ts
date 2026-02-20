@@ -34,6 +34,11 @@ export type Events = {
       force?: boolean // 強制再分類フラグ
     }
   }
+  "embeddings/regenerate.requested": {
+    data: {
+      userId: string
+    }
+  }
 }
 
 /**

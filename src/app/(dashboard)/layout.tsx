@@ -6,10 +6,6 @@ import {
   LayoutDashboard,
   Newspaper,
   FileText,
-  BriefcaseBusiness,
-  BarChart3,
-  Bell,
-  Settings,
   LogOut,
 } from "lucide-react"
 import { Button } from "@/components/ui/button"
@@ -17,6 +13,8 @@ import { Footer } from "@/components/Footer"
 import { Toaster } from "@/components/Toaster"
 import { AblyNotifications } from "@/components/AblyNotifications"
 import { MobileMenu } from "@/components/MobileMenu"
+import { MoreMenu } from "@/components/MoreMenu"
+import { ThemeToggle } from "@/components/ThemeToggle"
 import { KeyboardShortcuts } from "@/components/KeyboardShortcuts"
 import { handleSignOut } from "./actions"
 
@@ -36,7 +34,7 @@ export default async function DashboardLayout({
   const user = session.user
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-slate-50 dark:bg-slate-950">
       {/* トースト通知 */}
       <Toaster />
       {/* Ablyリアルタイム通知 */}
@@ -45,7 +43,7 @@ export default async function DashboardLayout({
       <KeyboardShortcuts />
 
       {/* ナビゲーションバー */}
-      <nav className="bg-white shadow-sm">
+      <nav className="bg-white dark:bg-slate-900 shadow-sm dark:shadow-slate-800/50 border-b border-transparent dark:border-slate-800">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8">
           <div className="flex h-16 justify-between">
             <div className="flex items-center gap-3">
@@ -59,60 +57,34 @@ export default async function DashboardLayout({
                   <span className="text-xl font-bold text-indigo-600">Raindary</span>
                 </Link>
               </div>
-              <div className="hidden sm:ml-6 sm:flex sm:space-x-8">
+              <div className="hidden sm:ml-6 sm:flex sm:items-stretch sm:space-x-4">
                 <Link
                   href="/dashboard"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                 >
                   <LayoutDashboard className="h-4 w-4" />
                   ダッシュボード
                 </Link>
                 <Link
                   href="/raindrops"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                 >
                   <Newspaper className="h-4 w-4" />
                   記事一覧
                 </Link>
                 <Link
                   href="/summaries"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
+                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                 >
                   <FileText className="h-4 w-4" />
                   要約一覧
                 </Link>
-                <Link
-                  href="/jobs"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
-                >
-                  <BriefcaseBusiness className="h-4 w-4" />
-                  ジョブ管理
-                </Link>
-                <Link
-                  href="/stats"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
-                >
-                  <BarChart3 className="h-4 w-4" />
-                  統計
-                </Link>
-                <Link
-                  href="/notifications"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
-                >
-                  <Bell className="h-4 w-4" />
-                  通知
-                </Link>
-                <Link
-                  href="/settings"
-                  className="inline-flex items-center gap-2 border-b-2 border-transparent px-1 pt-1 text-sm font-medium text-slate-500 hover:border-slate-300 hover:text-slate-700"
-                >
-                  <Settings className="h-4 w-4" />
-                  設定
-                </Link>
+                <MoreMenu />
               </div>
             </div>
             <div className="hidden sm:flex items-center gap-4">
-              <span className="text-sm text-slate-700">
+              <ThemeToggle />
+              <span className="text-sm text-slate-700 dark:text-slate-300">
                 {user.name || user.email}
               </span>
               <form action={handleSignOut}>
@@ -120,7 +92,7 @@ export default async function DashboardLayout({
                   type="submit"
                   variant="ghost"
                   size="sm"
-                  className="text-slate-500 hover:text-slate-700"
+                  className="text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200"
                 >
                   <LogOut className="h-4 w-4 mr-2" />
                   ログアウト

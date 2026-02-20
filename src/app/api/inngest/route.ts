@@ -5,6 +5,8 @@ import { raindropExtract } from "@/inngest/functions/raindrop-extract"
 import { raindropSummarize } from "@/inngest/functions/raindrop-summarize"
 import { classifyThemes } from "@/inngest/functions/classify-themes"
 import { cleanupJobHistory } from "@/inngest/functions/cleanup-job-history"
+import { generateWeeklyDigest } from "@/inngest/functions/generate-digest"
+import { regenerateEmbeddings } from "@/inngest/functions/regenerate-embeddings"
 
 /**
  * Inngest関数を登録
@@ -17,5 +19,7 @@ export const { GET, POST, PUT } = serve({
     raindropSummarize,
     classifyThemes,
     cleanupJobHistory,
+    generateWeeklyDigest,
+    regenerateEmbeddings,
   ],
 })

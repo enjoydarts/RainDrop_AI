@@ -153,7 +153,8 @@ export const classifyThemes = inngest.createFunction(
             const themes = await assignThemeLabels(
               clusterAssignments,
               summaryData,
-              apiKeys.openaiApiKey
+              apiKeys.openaiApiKey,
+              userId
             )
 
             // MapをArray形式に変換（Inngestはシリアライズ可能な形式が必要）
@@ -328,7 +329,8 @@ export const classifyThemes = inngest.createFunction(
           const themes = await assignThemeLabels(
             clusterAssignments,
             summaryData,
-            apiKeys.openaiApiKey
+            apiKeys.openaiApiKey,
+            userId
           )
 
           return Array.from(themes.entries())

@@ -56,7 +56,7 @@ export function RegenerateThemesButton() {
         onClick={() => setShowConfirm(true)}
         disabled={isRegenerating}
         variant="outline"
-        className="border-orange-200 hover:bg-orange-50"
+        className="border-orange-200 dark:border-orange-800 hover:bg-orange-50 dark:hover:bg-orange-950/50"
       >
         {isRegenerating ? (
           <>
