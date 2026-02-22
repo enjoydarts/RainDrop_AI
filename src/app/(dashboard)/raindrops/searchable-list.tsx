@@ -1,6 +1,6 @@
 "use client"
 
-import { useState, useMemo } from "react"
+import { useEffect, useState, useMemo } from "react"
 import Image from "next/image"
 import { Search, X, Calendar, Tag, Newspaper } from "lucide-react"
 import { Input } from "@/components/ui/input"
@@ -26,11 +26,19 @@ interface SearchableListProps {
   items: Raindrop[]
   collectionMap?: Map<number, string>
   summaryCountMap?: Map<number, number>
+  initialCollectionId?: number | null
+  initialSearchQuery?: string
 }
 
-export function SearchableList({ items, collectionMap = new Map(), summaryCountMap = new Map() }: SearchableListProps) {
-  const [searchQuery, setSearchQuery] = useState("")
-  const [selectedCollection, setSelectedCollection] = useState<number | null>(null)
+export function SearchableList({
+  items,
+  collectionMap = new Map(),
+  summaryCountMap = new Map(),
+  initialCollectionId = null,
+  initialSearchQuery = "",
+}: SearchableListProps) {
+  const [searchQuery, setSearchQuery] = useState(initialSearchQuery)
+  const [selectedCollection, setSelectedCollection] = useState<number | null>(initialCollectionId)
   const [selectedTag, setSelectedTag] = useState<string | null>(null)
 
   // タグ一覧を生成
@@ -114,6 +122,35 @@ export function SearchableList({ items, collectionMap = new Map(), summaryCountM
     return result
   }, [items, searchQuery, selectedCollection, selectedTag])
 
+  useEffect(() => {
+    if (typeof window === "undefined") return
+    const hash = window.location.hash
+    if (!hash) return
+
+    const targetId = hash.replace(/^#/, "")
+    let attempts = 0
+
+    const tryScroll = () => {
+      const el = document.getElementById(targetId)
+      if (el) {
+        el.scrollIntoView({ behavior: "smooth", block: "start" })
+        return true
+      }
+      return false
+    }
+
+    if (tryScroll()) return
+
+    const timer = window.setInterval(() => {
+      attempts += 1
+      if (tryScroll() || attempts >= 10) {
+        window.clearInterval(timer)
+      }
+    }, 200)
+
+    return () => window.clearInterval(timer)
+  }, [filteredItems])
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
       {/* サイドバー（コレクションフィルタ） */}
@@ -122,6 +159,7 @@ export function SearchableList({ items, collectionMap = new Map(), summaryCountM
           <CollectionFilter
             collections={collections}
             onFilterChange={setSelectedCollection}
+            initialSelectedCollection={initialCollectionId}
           />
         </div>
       )}
@@ -220,6 +258,7 @@ export function SearchableList({ items, collectionMap = new Map(), summaryCountM
             return (
               <div
                 key={item.id}
+                id={`raindrop-${item.id}`}
                 className="group overflow-hidden rounded-xl border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 shadow-sm card-hover"
               >
                 {/* カバー画像（上部・大きく） */}

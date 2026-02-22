@@ -14,7 +14,7 @@ import Link from "next/link"
 export default async function RaindropsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ page?: string }>
+  searchParams: Promise<{ page?: string; collectionId?: string; q?: string }>
 }) {
   const session = await auth()
 
@@ -25,6 +25,11 @@ export default async function RaindropsPage({
   const userId = session.user.id
   const params = await searchParams
   const page = Math.max(1, Number(params.page || "1"))
+  const initialCollectionId =
+    params.collectionId && !Number.isNaN(Number(params.collectionId))
+      ? Number(params.collectionId)
+      : null
+  const initialSearchQuery = typeof params.q === "string" ? params.q : ""
   const pageSize = 50
   const offset = (page - 1) * pageSize
 
@@ -119,7 +124,13 @@ export default async function RaindropsPage({
         </Card>
       ) : (
         <>
-          <SearchableList items={items} collectionMap={collectionMap} summaryCountMap={summaryCountMap} />
+          <SearchableList
+            items={items}
+            collectionMap={collectionMap}
+            summaryCountMap={summaryCountMap}
+            initialCollectionId={initialCollectionId}
+            initialSearchQuery={initialSearchQuery}
+          />
           <div className="mt-6 flex items-center justify-between">
             <p className="text-sm text-slate-500">
               {page} / {totalPages} ページ

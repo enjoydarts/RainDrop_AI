@@ -14,10 +14,17 @@ interface Collection {
 interface CollectionFilterProps {
   collections: Collection[]
   onFilterChange: (collectionId: number | null) => void
+  initialSelectedCollection?: number | null
 }
 
-export function CollectionFilter({ collections, onFilterChange }: CollectionFilterProps) {
-  const [selectedCollection, setSelectedCollection] = useState<number | null>(null)
+export function CollectionFilter({
+  collections,
+  onFilterChange,
+  initialSelectedCollection = null,
+}: CollectionFilterProps) {
+  const [selectedCollection, setSelectedCollection] = useState<number | null>(
+    initialSelectedCollection
+  )
 
   const handleSelect = (collectionId: number | null) => {
     setSelectedCollection(collectionId)
